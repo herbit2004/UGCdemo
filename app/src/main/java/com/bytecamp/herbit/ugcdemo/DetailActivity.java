@@ -1,79 +1,302 @@
 package com.bytecamp.herbit.ugcdemo;
 
+import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.PopupMenu;
 import android.widget.TextView;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.viewpager2.widget.ViewPager2;
 import com.bumptech.glide.Glide;
+import com.bytecamp.herbit.ugcdemo.data.model.CommentWithUser;
+import com.bytecamp.herbit.ugcdemo.data.model.PostWithUser;
 import com.bytecamp.herbit.ugcdemo.ui.CommentsAdapter;
+import com.bytecamp.herbit.ugcdemo.ui.DetailImageAdapter;
+import com.bytecamp.herbit.ugcdemo.utils.TimeUtils;
 import com.bytecamp.herbit.ugcdemo.viewmodel.DetailViewModel;
+import com.google.android.material.tabs.TabLayout;
+import com.google.android.material.tabs.TabLayoutMediator;
+import java.util.ArrayList;
+import java.util.List;
 
+/**
+ * DetailActivity
+ * 帖子详情页。
+ * 功能：
+ * 1. 展示帖子多图轮播、标题、正文。
+ * 2. 展示评论列表，支持回复评论、删除自己的评论。
+ * 3. 支持帖子和评论的点赞功能（实时更新状态和数量）。
+ * 4. 楼主可删除自己的帖子。
+ */
 public class DetailActivity extends AppCompatActivity {
     public static final String EXTRA_POST_ID = "extra_post_id";
+
+    // ViewModel & Data
     private DetailViewModel detailViewModel;
     private long postId;
-    private CommentsAdapter adapter;
+    private long currentUserId;
+    private List<Long> likedCommentIds = new ArrayList<>();
+    private Long replyToCommentId = null;
+    private String replyToUsername = null;
+
+    // Adapters
+    private CommentsAdapter commentsAdapter;
+    private DetailImageAdapter imageAdapter;
+
+    // Views
+    private ViewPager2 vpImages;
+    private TabLayout tabLayout;
+    private TextView tvDetailCoverTitle;
+    private TextView tvTitle, tvContent, tvPublishTime;
+    private ImageView ivHeaderAvatar;
+    private TextView tvHeaderName;
+    private ImageView ivMoreOptions;
+    private RecyclerView rvComments;
+    private EditText etComment;
+    private Button btnSend;
+    private ImageView ivCancelReply;
+    private LinearLayout llPostLike;
+    private ImageView ivLike;
+    private TextView tvLikeCount;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_detail);
 
+        // 1. 验证参数和用户状态
         postId = getIntent().getLongExtra(EXTRA_POST_ID, -1);
         if (postId == -1) {
             finish();
             return;
         }
+        SharedPreferences prefs = getSharedPreferences("ugc_prefs", MODE_PRIVATE);
+        currentUserId = prefs.getLong("user_id", -1);
 
+        // 2. 初始化 ViewModel
         detailViewModel = new ViewModelProvider(this).get(DetailViewModel.class);
 
+        // 3. 初始化 UI 和 观察者
         initViews();
-        observeData();
+        setupListeners();
+        setupObservers();
     }
 
     private void initViews() {
-        ImageView ivImage = findViewById(R.id.ivDetailImage);
-        TextView tvTitle = findViewById(R.id.tvDetailTitle);
-        TextView tvContent = findViewById(R.id.tvDetailContent);
-        RecyclerView rvComments = findViewById(R.id.rvComments);
-        EditText etComment = findViewById(R.id.etComment);
-        Button btnSend = findViewById(R.id.btnSendComment);
+        // Toolbar
+        Toolbar toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setDisplayShowTitleEnabled(false);
+        }
+        toolbar.setNavigationOnClickListener(v -> finish());
 
+        // Header
+        ivHeaderAvatar = findViewById(R.id.ivHeaderAvatar);
+        tvHeaderName = findViewById(R.id.tvHeaderName);
+        ivMoreOptions = findViewById(R.id.ivMoreOptions);
+
+        // Content
+        tvTitle = findViewById(R.id.tvDetailTitle);
+        tvContent = findViewById(R.id.tvDetailContent);
+        tvPublishTime = findViewById(R.id.tvPublishTime);
+
+        // Images
+        vpImages = findViewById(R.id.vpImages);
+        tabLayout = findViewById(R.id.tabLayout);
+        tvDetailCoverTitle = findViewById(R.id.tvDetailCoverTitle);
+        imageAdapter = new DetailImageAdapter();
+        vpImages.setAdapter(imageAdapter);
+        new TabLayoutMediator(tabLayout, vpImages, (tab, position) -> {}).attach();
+
+        // Comments List
+        rvComments = findViewById(R.id.rvComments);
         rvComments.setLayoutManager(new LinearLayoutManager(this));
-        adapter = new CommentsAdapter();
-        rvComments.setAdapter(adapter);
+        commentsAdapter = new CommentsAdapter();
+        commentsAdapter.setCurrentUserId(currentUserId);
+        rvComments.setAdapter(commentsAdapter);
 
+        // Input Area
+        etComment = findViewById(R.id.etComment);
+        btnSend = findViewById(R.id.btnSendComment);
+        ivCancelReply = findViewById(R.id.ivCancelReply);
+
+        // Post Like Area
+        llPostLike = findViewById(R.id.llPostLike);
+        ivLike = findViewById(R.id.ivPostLike);
+        tvLikeCount = findViewById(R.id.tvPostLikeCount);
+    }
+
+    private void setupListeners() {
+        // 取消回复模式
+        ivCancelReply.setOnClickListener(v -> exitReplyMode());
+
+        // 发送评论
         btnSend.setOnClickListener(v -> {
             String content = etComment.getText().toString().trim();
             if (!TextUtils.isEmpty(content)) {
-                SharedPreferences prefs = getSharedPreferences("ugc_prefs", MODE_PRIVATE);
-                long userId = prefs.getLong("user_id", -1);
-                detailViewModel.addComment(postId, userId, content);
-                etComment.setText("");
+                detailViewModel.addComment(postId, currentUserId, content, replyToCommentId, replyToUsername);
+                exitReplyMode();
             }
         });
 
-        detailViewModel.getPostById(postId).observe(this, postWithUser -> {
-            if (postWithUser != null) {
-                tvTitle.setText(postWithUser.post.title);
-                tvContent.setText(postWithUser.post.content);
-                if (postWithUser.post.image_path != null) {
-                    Glide.with(this).load(postWithUser.post.image_path).into(ivImage);
-                }
+        // 帖子点赞 (初始状态由 observer 更新)
+        llPostLike.setOnClickListener(v -> detailViewModel.toggleLike(currentUserId, 0, postId, false));
+
+        // 评论列表交互
+        commentsAdapter.setListener(new CommentsAdapter.OnCommentActionListener() {
+            @Override
+            public void onReply(CommentWithUser comment) {
+                enterReplyMode(comment);
+            }
+
+            @Override
+            public void onLike(CommentWithUser comment) {
+                boolean isLiked = likedCommentIds.contains(comment.comment.comment_id);
+                detailViewModel.toggleLike(currentUserId, 1, comment.comment.comment_id, isLiked);
+            }
+
+            @Override
+            public void onDelete(CommentWithUser comment) {
+                showDeleteCommentDialog(comment);
             }
         });
     }
 
-    private void observeData() {
-        detailViewModel.getCommentsForPost(postId).observe(this, comments -> {
-            adapter.setComments(comments);
+    private void setupObservers() {
+        // 1. 帖子详情
+        detailViewModel.getPostById(postId).observe(this, this::updatePostUI);
+
+        // 2. 评论列表
+        detailViewModel.getCommentsForPost(postId).observe(this, comments -> commentsAdapter.setComments(comments));
+
+        // 3. 帖子点赞数
+        detailViewModel.getLikeCount(0, postId).observe(this, count -> tvLikeCount.setText(String.valueOf(count)));
+
+        // 4. 当前用户是否点赞帖子
+        detailViewModel.isLiked(currentUserId, 0, postId).observe(this, isLiked -> {
+            boolean liked = isLiked != null && isLiked;
+            ivLike.setImageResource(liked ? android.R.drawable.btn_star_big_on : android.R.drawable.btn_star_big_off);
+            llPostLike.setOnClickListener(v -> detailViewModel.toggleLike(currentUserId, 0, postId, liked));
         });
+
+        // 5. 用户点赞过的评论ID列表
+        detailViewModel.getLikedCommentIds(currentUserId).observe(this, ids -> {
+            this.likedCommentIds = ids;
+            commentsAdapter.setLikedCommentIds(ids);
+        });
+
+        // 6. 所有评论的点赞统计
+        detailViewModel.getCommentLikeCounts().observe(this, counts -> commentsAdapter.setLikeCounts(counts));
+    }
+
+    private void updatePostUI(PostWithUser postWithUser) {
+        if (postWithUser == null || postWithUser.post == null) return;
+
+        // 设置内容
+        tvTitle.setText(postWithUser.post.title);
+        tvContent.setText(postWithUser.post.content);
+        
+        // 设置发布时间
+        tvPublishTime.setText("发布于 " + TimeUtils.formatTime(postWithUser.post.publish_time));
+
+        // 处理图片
+        List<String> images = new ArrayList<>();
+        if (postWithUser.post.image_path != null && !postWithUser.post.image_path.isEmpty()) {
+            String[] paths = postWithUser.post.image_path.split(";");
+            for (String p : paths) {
+                if (!p.isEmpty()) images.add(p);
+            }
+        }
+
+        if (!images.isEmpty()) {
+            vpImages.setVisibility(View.VISIBLE);
+            tvDetailCoverTitle.setVisibility(View.GONE);
+            imageAdapter.setImageUrls(images);
+            tabLayout.setVisibility(images.size() > 1 ? View.VISIBLE : View.GONE);
+        } else {
+            vpImages.setVisibility(View.GONE);
+            tabLayout.setVisibility(View.GONE);
+            tvDetailCoverTitle.setVisibility(View.VISIBLE);
+            tvDetailCoverTitle.setText(postWithUser.post.title);
+        }
+
+        // 处理作者信息
+        commentsAdapter.setPostAuthorId(postWithUser.post.author_id);
+        if (postWithUser.user != null) {
+            tvHeaderName.setText(postWithUser.user.username);
+            if (postWithUser.user.avatar_path != null) {
+                Glide.with(this).load(postWithUser.user.avatar_path).circleCrop().into(ivHeaderAvatar);
+            }
+        }
+
+        // 处理更多菜单 (删除帖子)
+        if (postWithUser.post.author_id == currentUserId) {
+            ivMoreOptions.setVisibility(View.VISIBLE);
+            ivMoreOptions.setOnClickListener(this::showPostMenu);
+        } else {
+            ivMoreOptions.setVisibility(View.GONE);
+        }
+    }
+
+    private void enterReplyMode(CommentWithUser comment) {
+        replyToCommentId = (comment.comment.parent_comment_id == null || comment.comment.parent_comment_id == 0)
+                ? comment.comment.comment_id
+                : comment.comment.parent_comment_id;
+        replyToUsername = comment.user.username;
+        etComment.setHint("回复 " + replyToUsername + ":");
+        etComment.requestFocus();
+        ivCancelReply.setVisibility(View.VISIBLE);
+        InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+        imm.showSoftInput(etComment, InputMethodManager.SHOW_IMPLICIT);
+    }
+
+    private void exitReplyMode() {
+        replyToCommentId = null;
+        replyToUsername = null;
+        etComment.setText("");
+        etComment.setHint("说点什么...");
+        ivCancelReply.setVisibility(View.GONE);
+        InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+        imm.hideSoftInputFromWindow(etComment.getWindowToken(), 0);
+    }
+
+    private void showPostMenu(View v) {
+        PopupMenu popup = new PopupMenu(this, v);
+        popup.getMenu().add("删除帖子");
+        popup.setOnMenuItemClickListener(item -> {
+            if (item.getTitle().equals("删除帖子")) {
+                new AlertDialog.Builder(this)
+                        .setTitle("删除帖子")
+                        .setMessage("确定要删除这个帖子吗？")
+                        .setPositiveButton("删除", (d, w) -> detailViewModel.deletePost(postId, this::finish))
+                        .setNegativeButton("取消", null)
+                        .show();
+                return true;
+            }
+            return false;
+        });
+        popup.show();
+    }
+
+    private void showDeleteCommentDialog(CommentWithUser comment) {
+        new AlertDialog.Builder(this)
+                .setTitle("删除评论")
+                .setMessage("确定要删除这条评论吗？")
+                .setPositiveButton("删除", (d, w) -> detailViewModel.deleteComment(comment.comment.comment_id))
+                .setNegativeButton("取消", null)
+                .show();
     }
 }

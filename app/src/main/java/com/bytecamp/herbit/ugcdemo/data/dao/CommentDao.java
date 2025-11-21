@@ -17,4 +17,7 @@ public interface CommentDao {
     @Transaction
     @Query("SELECT * FROM comments WHERE post_id = :postId ORDER BY comment_time ASC")
     LiveData<List<CommentWithUser>> getCommentsForPost(long postId);
+    
+    @Query("DELETE FROM comments WHERE comment_id = :commentId")
+    void deleteById(long commentId);
 }

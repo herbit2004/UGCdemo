@@ -21,7 +21,22 @@ public interface UserDao {
 
     @Query("SELECT * FROM users WHERE user_id = :userId")
     LiveData<User> getUserById(long userId);
+    
+    @Query("SELECT * FROM users WHERE user_id = :userId")
+    User getUserByIdSync(long userId);
 
+    @Query("UPDATE users SET password = :newPassword WHERE user_id = :userId")
+    void updatePassword(long userId, String newPassword);
+
+    @Query("UPDATE users SET avatar_path = :newPath WHERE user_id = :userId")
+    void updateAvatar(long userId, String newPath);
+
+    @Query("UPDATE users SET username = :newUsername WHERE user_id = :userId")
+    void updateUsername(long userId, String newUsername);
+
+    @Query("DELETE FROM users WHERE user_id = :userId")
+    void deleteUser(long userId);
+    
     @Update
     void update(User user);
 

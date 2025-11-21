@@ -4,20 +4,40 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:padding="16dp">
-    
-    <ImageView
-        android:id="@+id/ivPreview"
+
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="200dp"
-        android:src="@android:drawable/ic_menu_camera"
-        android:scaleType="centerInside"
-        android:background="#EEE" />
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <Button
+            android:id="@+id/btnAddImage"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="添加图片" />
+
+        <TextView
+            android:id="@+id/tvImageCount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:text="0/9" />
+    </LinearLayout>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvImagePreview"
+        android:layout_width="match_parent"
+        android:layout_height="120dp"
+        android:layout_marginTop="8dp"
+        android:background="#F0F0F0" />
 
     <EditText
         android:id="@+id/etTitle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="标题"
+        android:hint="标题 (必填)"
+        android:textStyle="bold"
         android:layout_marginTop="16dp"/>
 
     <EditText

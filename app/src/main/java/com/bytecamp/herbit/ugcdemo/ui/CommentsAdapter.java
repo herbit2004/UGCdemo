@@ -3,19 +3,65 @@ package com.bytecamp.herbit.ugcdemo.ui;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import com.bytecamp.herbit.ugcdemo.R;
+import com.bytecamp.herbit.ugcdemo.data.model.CommentLikeCount;
 import com.bytecamp.herbit.ugcdemo.data.model.CommentWithUser;
+import com.bytecamp.herbit.ugcdemo.utils.TimeUtils;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class CommentsAdapter extends RecyclerView.Adapter<CommentsAdapter.CommentViewHolder> {
     private List<CommentWithUser> comments = new ArrayList<>();
+    private long postAuthorId;
+    private long currentUserId;
+    private Set<Long> likedCommentIds = new HashSet<>(); // Store liked comment IDs
+    private Map<Long, Integer> likeCounts = new HashMap<>(); // Store like counts
+    private OnCommentActionListener listener;
+
+    public interface OnCommentActionListener {
+        void onReply(CommentWithUser comment);
+        void onLike(CommentWithUser comment);
+        void onDelete(CommentWithUser comment);
+    }
+    
+    public void setListener(OnCommentActionListener listener) {
+        this.listener = listener;
+    }
 
     public void setComments(List<CommentWithUser> comments) {
         this.comments = comments;
+        notifyDataSetChanged();
+    }
+    
+    public void setPostAuthorId(long postAuthorId) {
+        this.postAuthorId = postAuthorId;
+        notifyDataSetChanged();
+    }
+    
+    public void setCurrentUserId(long currentUserId) {
+        this.currentUserId = currentUserId;
+        notifyDataSetChanged();
+    }
+
+    public void setLikedCommentIds(List<Long> ids) {
+        this.likedCommentIds = new HashSet<>(ids);
+        notifyDataSetChanged();
+    }
+    
+    public void setLikeCounts(List<CommentLikeCount> counts) {
+        this.likeCounts.clear();
+        for (CommentLikeCount item : counts) {
+            this.likeCounts.put(item.target_id, item.count);
+        }
         notifyDataSetChanged();
     }
 
@@ -29,8 +75,72 @@ public class CommentsAdapter extends RecyclerView.Adapter<CommentsAdapter.Commen
     @Override
     public void onBindViewHolder(@NonNull CommentViewHolder holder, int position) {
         CommentWithUser item = comments.get(position);
-        holder.tvAuthor.setText(item.user != null ? item.user.username : "Unknown");
-        holder.tvContent.setText(item.comment.content);
+        
+        // Author
+        String authorName = item.user != null ? item.user.username : "Unknown";
+        holder.tvAuthor.setText(authorName);
+        
+        // Reply UI
+        if (item.comment.reply_to_username != null) {
+            holder.tvContent.setText("回复 " + item.comment.reply_to_username + ": " + item.comment.content);
+        } else {
+            holder.tvContent.setText(item.comment.content);
+        }
+        
+        // Time
+        holder.tvTime.setText(TimeUtils.formatTime(item.comment.comment_time));
+        
+        // Indentation (UI nesting)
+        LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) holder.llContainer.getLayoutParams();
+        if (item.comment.parent_comment_id != null && item.comment.parent_comment_id != 0) {
+            params.setMarginStart(dpToPx(32)); // Indent
+        } else {
+            params.setMarginStart(0);
+        }
+        holder.llContainer.setLayoutParams(params);
+
+        // Badge
+        if (item.comment.author_id == postAuthorId) {
+            holder.tvBadge.setVisibility(View.VISIBLE);
+        } else {
+            holder.tvBadge.setVisibility(View.GONE);
+        }
+        
+        // Like Status
+        boolean isLiked = likedCommentIds.contains(item.comment.comment_id);
+        if (isLiked) {
+            holder.ivLike.setImageResource(android.R.drawable.btn_star_big_on);
+        } else {
+            holder.ivLike.setImageResource(android.R.drawable.btn_star_big_off);
+        }
+        
+        // Like Count
+        int count = 0;
+        if (likeCounts.containsKey(item.comment.comment_id)) {
+            count = likeCounts.get(item.comment.comment_id);
+        }
+        holder.tvLikeCount.setText(String.valueOf(count));
+        
+        // Listeners
+        holder.itemView.setOnClickListener(v -> {
+            if (listener != null) listener.onReply(item);
+        });
+        
+        holder.itemView.setOnLongClickListener(v -> {
+            if (listener != null && item.comment.author_id == currentUserId) {
+                listener.onDelete(item);
+                return true;
+            }
+            return false;
+        });
+        
+        holder.ivLike.setOnClickListener(v -> {
+            if (listener != null) listener.onLike(item);
+        });
+    }
+    
+    private int dpToPx(int dp) {
+        return (int) (dp * android.content.res.Resources.getSystem().getDisplayMetrics().density);
     }
 
     @Override
@@ -39,11 +149,19 @@ public class CommentsAdapter extends RecyclerView.Adapter<CommentsAdapter.Commen
     }
 
     static class CommentViewHolder extends RecyclerView.ViewHolder {
-        TextView tvAuthor, tvContent;
+        TextView tvAuthor, tvContent, tvBadge, tvLikeCount, tvTime;
+        ImageView ivLike;
+        LinearLayout llContainer;
+        
         CommentViewHolder(View itemView) {
             super(itemView);
             tvAuthor = itemView.findViewById(R.id.tvCommentAuthor);
             tvContent = itemView.findViewById(R.id.tvCommentContent);
+            tvBadge = itemView.findViewById(R.id.tvAuthorBadge);
+            tvLikeCount = itemView.findViewById(R.id.tvCommentLikeCount);
+            tvTime = itemView.findViewById(R.id.tvCommentTime);
+            ivLike = itemView.findViewById(R.id.ivCommentLike);
+            llContainer = itemView.findViewById(R.id.llCommentContainer);
         }
     }
 }
