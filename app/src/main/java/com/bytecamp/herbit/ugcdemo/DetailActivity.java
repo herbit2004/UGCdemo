@@ -210,7 +210,7 @@ public class DetailActivity extends AppCompatActivity {
         // 4. 当前用户是否点赞帖子
         detailViewModel.isLiked(currentUserId, 0, postId).observe(this, isLiked -> {
             boolean liked = isLiked != null && isLiked;
-            ivLike.setImageResource(liked ? android.R.drawable.btn_star_big_on : android.R.drawable.btn_star_big_off);
+            ivLike.setImageResource(liked ? R.drawable.ic_like_on : R.drawable.ic_like_off);
             llPostLike.setOnClickListener(v -> detailViewModel.toggleLike(currentUserId, 0, postId, liked));
         });
 

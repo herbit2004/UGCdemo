@@ -14,7 +14,7 @@
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            app:navigationIcon="?attr/homeAsUpIndicator">
+            app:navigationIcon="@drawable/ic_back">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -55,8 +55,10 @@
                     android:id="@+id/ivMoreOptions"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:src="@android:drawable/ic_menu_more"
+                    android:minWidth="@dimen/tap_min_size"
+                    android:src="@drawable/ic_more"
                     android:padding="12dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
                     android:contentDescription="More" />
 
             </LinearLayout>
@@ -159,13 +161,18 @@
                     android:layout_alignParentEnd="true"
                     android:gravity="center_vertical"
                     android:background="?attr/selectableItemBackground"
-                    android:padding="4dp">
+                    android:minHeight="@dimen/tap_min_size"
+                    android:minWidth="@dimen/tap_min_size"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:paddingHorizontal="8dp"
+                    android:paddingVertical="4dp">
 
                     <ImageView
                         android:id="@+id/ivPostLike"
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:src="@android:drawable/btn_star_big_off"/>
+                        android:layout_width="@dimen/icon_size"
+                        android:layout_height="@dimen/icon_size"
+                        android:src="@drawable/ic_like"/>
 
                     <TextView
                         android:id="@+id/tvPostLikeCount"
@@ -199,8 +206,10 @@
             android:id="@+id/ivCancelReply"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:src="@android:drawable/ic_menu_close_clear_cancel"
+            android:minWidth="@dimen/tap_min_size"
+            android:src="@drawable/ic_close"
             android:padding="8dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
             android:visibility="gone"/>
 
         <EditText

@@ -116,11 +116,7 @@ public class CommentsAdapter extends RecyclerView.Adapter<CommentsAdapter.Commen
         
         // Like Status
         boolean isLiked = likedCommentIds.contains(item.comment.comment_id);
-        if (isLiked) {
-            holder.ivLike.setImageResource(android.R.drawable.btn_star_big_on);
-        } else {
-            holder.ivLike.setImageResource(android.R.drawable.btn_star_big_off);
-        }
+        holder.ivLike.setImageResource(isLiked ? R.drawable.ic_like_on : R.drawable.ic_like_off);
         
         // Like Count
         int count = 0;
@@ -142,7 +138,8 @@ public class CommentsAdapter extends RecyclerView.Adapter<CommentsAdapter.Commen
             return false;
         });
         
-        holder.ivLike.setOnClickListener(v -> {
+        View likeContainer = ((ViewGroup) holder.ivLike.getParent());
+        likeContainer.setOnClickListener(v -> {
             if (listener != null) listener.onLike(item);
         });
     }

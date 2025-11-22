@@ -15,6 +15,8 @@
             android:id="@+id/btnAddImage"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:minHeight="@dimen/tap_min_size"
+            android:paddingHorizontal="12dp"
             android:text="添加图片" />
 
         <TextView
@@ -30,12 +32,13 @@
         android:layout_width="match_parent"
         android:layout_height="120dp"
         android:layout_marginTop="8dp"
-        android:background="#F0F0F0" />
+        android:background="@color/gray_100" />
 
     <EditText
         android:id="@+id/etTitle"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="44dp"
+        android:background="@drawable/bg_input_box"
         android:hint="标题 (必填)"
         android:textStyle="bold"
         android:layout_marginTop="16dp"/>
@@ -45,6 +48,7 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
+        android:background="@drawable/bg_input_box"
         android:hint="分享你的想法..."
         android:gravity="top"
         android:layout_marginTop="16dp"/>
@@ -53,6 +57,7 @@
         android:id="@+id/btnPublish"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:minHeight="@dimen/tap_min_size"
         android:text="发布" />
 
 </LinearLayout>

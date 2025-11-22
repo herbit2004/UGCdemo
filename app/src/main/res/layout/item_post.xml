@@ -81,9 +81,9 @@
                 android:gravity="center_vertical"
                 android:layout_marginStart="4dp">
                 <ImageView
-                    android:layout_width="12dp"
-                    android:layout_height="12dp"
-                    android:src="@android:drawable/btn_star_big_off"
+                    android:layout_width="@dimen/icon_size"
+                    android:layout_height="@dimen/icon_size"
+                    android:src="@drawable/ic_like"
                     android:alpha="0.5"/>
                 <TextView
                     android:id="@+id/tvLikeCount"
@@ -102,9 +102,9 @@
                 android:gravity="center_vertical"
                 android:layout_marginStart="4dp">
                 <ImageView
-                    android:layout_width="12dp"
-                    android:layout_height="12dp"
-                    android:src="@drawable/ic_comment_vector"
+                    android:layout_width="@dimen/icon_size"
+                    android:layout_height="@dimen/icon_size"
+                    android:src="@drawable/ic_comment"
                     android:alpha="0.5"/>
                 <TextView
                     android:id="@+id/tvCommentCount"

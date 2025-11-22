@@ -9,21 +9,26 @@
     <EditText
         android:id="@+id/etUsername"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="用户名" />
+        android:layout_height="44dp"
+        android:background="@drawable/bg_input_box"
+        android:hint="用户名"
+        android:paddingHorizontal="12dp"/>
 
     <EditText
         android:id="@+id/etPassword"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="44dp"
         android:inputType="textPassword"
+        android:background="@drawable/bg_input_box"
         android:hint="密码"
-        android:layout_marginTop="16dp" />
+        android:layout_marginTop="16dp"
+        android:paddingHorizontal="12dp"/>
 
     <Button
         android:id="@+id/btnAuth"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:minHeight="@dimen/tap_min_size"
         android:text="登录"
         android:layout_marginTop="24dp" />
 
@@ -35,6 +40,7 @@
         android:layout_marginTop="16dp"
         android:padding="8dp"
         android:clickable="true"
-        android:focusable="true" />
+        android:focusable="true"
+        android:background="?attr/selectableItemBackground" />
 
 </LinearLayout>

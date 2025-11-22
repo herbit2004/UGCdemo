@@ -7,8 +7,8 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
-        android:background="#FFFFFF"
-        android:elevation="4dp"
+        android:background="@color/white"
+        android:elevation="0dp"
         android:gravity="center_vertical"
         android:orientation="horizontal"
         android:paddingHorizontal="8dp">
@@ -17,8 +17,11 @@
             android:id="@+id/ivSort"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
-            android:src="@android:drawable/ic_menu_sort_by_size"
-            android:padding="12dp"/>
+            android:minWidth="@dimen/tap_min_size"
+            android:src="@drawable/ic_sort"
+            android:padding="12dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="排序"/>
 
         <EditText
             android:id="@+id/etSearch"
@@ -37,8 +40,11 @@
             android:id="@+id/ivBack"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
-            android:src="@android:drawable/ic_menu_close_clear_cancel"
-            android:padding="12dp"/>
+            android:minWidth="@dimen/tap_min_size"
+            android:src="@drawable/ic_close"
+            android:padding="12dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="关闭"/>
 
     </LinearLayout>
 

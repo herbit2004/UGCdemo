@@ -8,16 +8,19 @@
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
-        android:background="#FFFFFF"
-        android:elevation="2dp">
+        android:background="@color/white"
+        android:elevation="0dp">
 
         <ImageView
             android:id="@+id/ivBack"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
-            android:src="@android:drawable/ic_menu_close_clear_cancel"
+            android:minWidth="@dimen/tap_min_size"
+            android:src="@drawable/ic_back"
             android:padding="16dp"
-            android:layout_alignParentStart="true"/>
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:layout_alignParentStart="true"
+            android:contentDescription="返回"/>
 
         <TextView
             android:id="@+id/tvTitle"
@@ -26,6 +29,7 @@
             android:text="列表"
             android:textSize="18sp"
             android:textStyle="bold"
+            android:textColor="@color/gray_900"
             android:layout_centerInParent="true"/>
 
     </RelativeLayout>
