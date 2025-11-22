@@ -9,7 +9,7 @@ import androidx.room.PrimaryKey;
         foreignKeys = {
                 @ForeignKey(entity = Post.class, parentColumns = "post_id", childColumns = "post_id", onDelete = ForeignKey.CASCADE),
                 @ForeignKey(entity = User.class, parentColumns = "user_id", childColumns = "author_id", onDelete = ForeignKey.CASCADE),
-                @ForeignKey(entity = Comment.class, parentColumns = "comment_id", childColumns = "parent_comment_id", onDelete = ForeignKey.CASCADE)
+                @ForeignKey(entity = Comment.class, parentColumns = "comment_id", childColumns = "parent_comment_id", onDelete = ForeignKey.SET_NULL)
         },
         indices = {
                 @Index(value = "post_id"),

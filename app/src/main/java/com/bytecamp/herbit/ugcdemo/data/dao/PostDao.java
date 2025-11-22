@@ -4,6 +4,7 @@ import androidx.lifecycle.LiveData;
 import androidx.room.Dao;
 import androidx.room.Insert;
 import androidx.room.Query;
+import androidx.room.RewriteQueriesToDropUnusedColumns;
 import androidx.room.Transaction;
 import com.bytecamp.herbit.ugcdemo.data.entity.Post;
 import com.bytecamp.herbit.ugcdemo.data.model.PostCardItem;
@@ -23,8 +24,7 @@ public interface PostDao {
 
     /**
      * 获取所有帖子，包含统计信息（点赞数、评论数）。
-     * 使用 SQL 子查询来聚合统计数据。
-     * 结果按发布时间倒序排列。
+     * 默认按发布时间倒序排列 (Recent Published)。
      */
     @Transaction
     @Query("SELECT posts.*, " +
@@ -32,6 +32,70 @@ public interface PostDao {
            "(SELECT COUNT(*) FROM comments WHERE post_id = posts.post_id) as commentCount " +
            "FROM posts ORDER BY publish_time DESC")
     LiveData<List<PostCardItem>> getAllPostCards();
+
+    /**
+     * 获取所有帖子，按热门程度（点赞数）排序。
+     */
+    @Transaction
+    @Query("SELECT posts.*, " +
+           "(SELECT COUNT(*) FROM likes WHERE target_type = 0 AND target_id = posts.post_id) as likeCount, " +
+           "(SELECT COUNT(*) FROM comments WHERE post_id = posts.post_id) as commentCount " +
+           "FROM posts ORDER BY likeCount DESC, commentCount DESC")
+    LiveData<List<PostCardItem>> getAllPostCardsPopular();
+
+    /**
+     * 获取所有帖子，按最近评论时间排序。
+     * 添加 @RewriteQueriesToDropUnusedColumns 注解以忽略未使用的 lastCommentTime 列警告
+     */
+    @Transaction
+    @RewriteQueriesToDropUnusedColumns
+    @Query("SELECT posts.*, " +
+           "(SELECT COUNT(*) FROM likes WHERE target_type = 0 AND target_id = posts.post_id) as likeCount, " +
+           "(SELECT COUNT(*) FROM comments WHERE post_id = posts.post_id) as commentCount, " +
+           "(SELECT MAX(comment_time) FROM comments WHERE post_id = posts.post_id) as lastCommentTime " +
+           "FROM posts ORDER BY lastCommentTime DESC, publish_time DESC")
+    LiveData<List<PostCardItem>> getAllPostCardsRecentComment();
+
+    /**
+     * 获取关注的人的帖子（最新发布）。
+     */
+    @Transaction
+    @Query("SELECT posts.*, " +
+           "(SELECT COUNT(*) FROM likes WHERE target_type = 0 AND target_id = posts.post_id) as likeCount, " +
+           "(SELECT COUNT(*) FROM comments WHERE post_id = posts.post_id) as commentCount " +
+           "FROM posts " +
+           "INNER JOIN follows ON posts.author_id = follows.followee_id " +
+           "WHERE follows.follower_id = :currentUserId " +
+           "ORDER BY publish_time DESC")
+    LiveData<List<PostCardItem>> getFollowedPostCards(long currentUserId);
+
+    /**
+     * 获取关注的人的帖子（最热）。
+     */
+    @Transaction
+    @Query("SELECT posts.*, " +
+           "(SELECT COUNT(*) FROM likes WHERE target_type = 0 AND target_id = posts.post_id) as likeCount, " +
+           "(SELECT COUNT(*) FROM comments WHERE post_id = posts.post_id) as commentCount " +
+           "FROM posts " +
+           "INNER JOIN follows ON posts.author_id = follows.followee_id " +
+           "WHERE follows.follower_id = :currentUserId " +
+           "ORDER BY likeCount DESC")
+    LiveData<List<PostCardItem>> getFollowedPostCardsPopular(long currentUserId);
+
+    /**
+     * 获取关注的人的帖子（最近评论）。
+     */
+    @Transaction
+    @RewriteQueriesToDropUnusedColumns
+    @Query("SELECT posts.*, " +
+           "(SELECT COUNT(*) FROM likes WHERE target_type = 0 AND target_id = posts.post_id) as likeCount, " +
+           "(SELECT COUNT(*) FROM comments WHERE post_id = posts.post_id) as commentCount, " +
+           "(SELECT MAX(comment_time) FROM comments WHERE post_id = posts.post_id) as lastCommentTime " +
+           "FROM posts " +
+           "INNER JOIN follows ON posts.author_id = follows.followee_id " +
+           "WHERE follows.follower_id = :currentUserId " +
+           "ORDER BY lastCommentTime DESC")
+    LiveData<List<PostCardItem>> getFollowedPostCardsRecentComment(long currentUserId);
     
     /**
      * 获取指定用户的所有帖子，包含统计信息。
@@ -42,6 +106,58 @@ public interface PostDao {
            "(SELECT COUNT(*) FROM comments WHERE post_id = posts.post_id) as commentCount " +
            "FROM posts WHERE author_id = :userId ORDER BY publish_time DESC")
     LiveData<List<PostCardItem>> getUserPostCards(long userId);
+
+    /**
+     * 获取指定用户点赞过的帖子。
+     */
+    @Transaction
+    @Query("SELECT posts.*, " +
+           "(SELECT COUNT(*) FROM likes WHERE target_type = 0 AND target_id = posts.post_id) as likeCount, " +
+           "(SELECT COUNT(*) FROM comments WHERE post_id = posts.post_id) as commentCount " +
+           "FROM posts " +
+           "INNER JOIN likes ON posts.post_id = likes.target_id " +
+           "WHERE likes.user_id = :userId AND likes.target_type = 0 " +
+           "ORDER BY likes.create_time DESC")
+    LiveData<List<PostCardItem>> getLikedPostCards(long userId);
+
+    /**
+     * 搜索帖子 (标题或内容包含关键词)。
+     */
+    @Transaction
+    @Query("SELECT posts.*, " +
+           "(SELECT COUNT(*) FROM likes WHERE target_type = 0 AND target_id = posts.post_id) as likeCount, " +
+           "(SELECT COUNT(*) FROM comments WHERE post_id = posts.post_id) as commentCount " +
+           "FROM posts " +
+           "WHERE title LIKE '%' || :keyword || '%' OR content LIKE '%' || :keyword || '%' " +
+           "ORDER BY publish_time DESC")
+    LiveData<List<PostCardItem>> searchPostCards(String keyword);
+
+    /**
+     * 搜索帖子并按热度排序
+     */
+    @Transaction
+    @Query("SELECT posts.*, " +
+            "(SELECT COUNT(*) FROM likes WHERE target_type = 0 AND target_id = posts.post_id) as likeCount, " +
+            "(SELECT COUNT(*) FROM comments WHERE post_id = posts.post_id) as commentCount " +
+            "FROM posts " +
+            "WHERE title LIKE '%' || :keyword || '%' OR content LIKE '%' || :keyword || '%' " +
+            "ORDER BY likeCount DESC")
+    LiveData<List<PostCardItem>> searchPostCardsPopular(String keyword);
+
+    /**
+     * 搜索帖子并按最近评论排序
+     * 添加 @RewriteQueriesToDropUnusedColumns 注解以忽略未使用的 lastCommentTime 列警告
+     */
+    @Transaction
+    @RewriteQueriesToDropUnusedColumns
+    @Query("SELECT posts.*, " +
+            "(SELECT COUNT(*) FROM likes WHERE target_type = 0 AND target_id = posts.post_id) as likeCount, " +
+            "(SELECT COUNT(*) FROM comments WHERE post_id = posts.post_id) as commentCount, " +
+            "(SELECT MAX(comment_time) FROM comments WHERE post_id = posts.post_id) as lastCommentTime " +
+            "FROM posts " +
+            "WHERE title LIKE '%' || :keyword || '%' OR content LIKE '%' || :keyword || '%' " +
+            "ORDER BY lastCommentTime DESC")
+    LiveData<List<PostCardItem>> searchPostCardsRecentComment(String keyword);
 
     /**
      * 获取单条帖子的详细信息（包含作者信息）。

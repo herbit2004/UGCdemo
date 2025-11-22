@@ -31,6 +31,7 @@ public class CommentsAdapter extends RecyclerView.Adapter<CommentsAdapter.Commen
         void onReply(CommentWithUser comment);
         void onLike(CommentWithUser comment);
         void onDelete(CommentWithUser comment);
+        void onUserClick(long userId);
     }
     
     public void setListener(OnCommentActionListener listener) {
@@ -79,6 +80,13 @@ public class CommentsAdapter extends RecyclerView.Adapter<CommentsAdapter.Commen
         // Author
         String authorName = item.user != null ? item.user.username : "Unknown";
         holder.tvAuthor.setText(authorName);
+        
+        // Click on author name to go to profile
+        holder.tvAuthor.setOnClickListener(v -> {
+            if (listener != null) {
+                listener.onUserClick(item.comment.author_id);
+            }
+        });
         
         // Reply UI
         if (item.comment.reply_to_username != null) {

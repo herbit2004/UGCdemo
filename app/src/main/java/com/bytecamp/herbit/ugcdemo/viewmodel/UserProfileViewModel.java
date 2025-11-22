@@ -9,18 +9,19 @@ import com.bytecamp.herbit.ugcdemo.data.AppDatabase;
 import com.bytecamp.herbit.ugcdemo.data.dao.FollowDao;
 import com.bytecamp.herbit.ugcdemo.data.dao.PostDao;
 import com.bytecamp.herbit.ugcdemo.data.dao.UserDao;
+import com.bytecamp.herbit.ugcdemo.data.entity.Follow;
 import com.bytecamp.herbit.ugcdemo.data.entity.User;
 import com.bytecamp.herbit.ugcdemo.data.model.PostCardItem;
 import java.util.List;
 
-public class ProfileViewModel extends AndroidViewModel {
+public class UserProfileViewModel extends AndroidViewModel {
     private UserDao userDao;
     private PostDao postDao;
     private FollowDao followDao;
     
-    private MutableLiveData<Integer> currentTab = new MutableLiveData<>(0); // 0: My Posts, 1: Liked Posts
+    private MutableLiveData<Integer> currentTab = new MutableLiveData<>(0); // 0: Posts, 1: Liked
 
-    public ProfileViewModel(Application application) {
+    public UserProfileViewModel(Application application) {
         super(application);
         AppDatabase db = AppDatabase.getDatabase(application);
         userDao = db.userDao();
@@ -32,7 +33,7 @@ public class ProfileViewModel extends AndroidViewModel {
         return userDao.getUserById(userId);
     }
 
-    public LiveData<List<PostCardItem>> getUserPosts(long userId) {
+    public LiveData<List<PostCardItem>> getPosts(long userId) {
         return Transformations.switchMap(currentTab, tab -> {
             if (tab == 1) {
                 return postDao.getLikedPostCards(userId);
@@ -46,6 +47,10 @@ public class ProfileViewModel extends AndroidViewModel {
         currentTab.setValue(tab);
     }
     
+    public int getCurrentTab() {
+        return currentTab.getValue() != null ? currentTab.getValue() : 0;
+    }
+    
     public LiveData<Integer> getFollowingCount(long userId) {
         return followDao.getFollowingCount(userId);
     }
@@ -53,36 +58,17 @@ public class ProfileViewModel extends AndroidViewModel {
     public LiveData<Integer> getFollowerCount(long userId) {
         return followDao.getFollowerCount(userId);
     }
-
-    public void updateUsername(long userId, String newUsername) {
-        AppDatabase.databaseWriteExecutor.execute(() -> {
-            userDao.updateUsername(userId, newUsername);
-        });
-    }
-
-    public void updateAvatar(long userId, String path) {
-        AppDatabase.databaseWriteExecutor.execute(() -> {
-            userDao.updateAvatar(userId, path);
-        });
-    }
-
-    public void verifyAndUpdatePassword(long userId, String oldPassword, String newPassword, Runnable onSuccess, Runnable onError) {
-        AppDatabase.databaseWriteExecutor.execute(() -> {
-            User user = userDao.getUserByIdSync(userId);
-            if (user != null && user.password.equals(oldPassword)) {
-                userDao.updatePassword(userId, newPassword);
-                if (onSuccess != null) onSuccess.run();
-            } else {
-                if (onError != null) onError.run();
-            }
-        });
-    }
     
-    public void deleteUser(long userId, Runnable onComplete) {
+    public LiveData<Integer> isFollowing(long followerId, long followeeId) {
+        return followDao.isFollowing(followerId, followeeId);
+    }
+
+    public void toggleFollow(long followerId, long followeeId, boolean isFollowing) {
         AppDatabase.databaseWriteExecutor.execute(() -> {
-            userDao.deleteUser(userId);
-            if (onComplete != null) {
-                onComplete.run();
+            if (isFollowing) {
+                followDao.deleteFollow(followerId, followeeId);
+            } else {
+                followDao.insertFollow(new Follow(followerId, followeeId, System.currentTimeMillis()));
             }
         });
     }

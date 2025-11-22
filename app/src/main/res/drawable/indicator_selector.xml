@@ -3,7 +3,8 @@
     <!-- 选中状态：实心大圆点 -->
     <item android:state_selected="true">
         <layer-list>
-            <item android:left="2dp" android:right="2dp" android:top="2dp" android:bottom="2dp">
+            <!-- gravity="center" 防止被拉伸 -->
+            <item android:gravity="center">
                 <shape android:shape="oval">
                     <solid android:color="@color/purple_500"/>
                     <size android:width="10dp" android:height="10dp"/>
@@ -15,7 +16,7 @@
     <!-- 未选中状态：半透明小圆点 -->
     <item>
         <layer-list>
-            <item android:left="2dp" android:right="2dp" android:top="2dp" android:bottom="2dp">
+            <item android:gravity="center">
                 <shape android:shape="oval">
                     <solid android:color="#80CCCCCC"/>
                     <size android:width="8dp" android:height="8dp"/>

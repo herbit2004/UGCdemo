@@ -1,5 +1,6 @@
 package com.bytecamp.herbit.ugcdemo.ui;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -15,6 +16,8 @@ import android.widget.LinearLayout;
 import android.widget.PopupMenu;
 import android.widget.TextView;
 import android.widget.Toast;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
@@ -24,11 +27,12 @@ import androidx.recyclerview.widget.StaggeredGridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import com.bytecamp.herbit.ugcdemo.AuthActivity;
+import com.bytecamp.herbit.ugcdemo.FollowListActivity;
 import com.bytecamp.herbit.ugcdemo.R;
 import com.bytecamp.herbit.ugcdemo.viewmodel.ProfileViewModel;
+import com.google.android.material.tabs.TabLayout;
 
 public class ProfileFragment extends Fragment {
-    private static final int PICK_AVATAR_REQUEST = 2;
     
     private ProfileViewModel profileViewModel;
     private ImageView ivAvatar;
@@ -36,6 +40,33 @@ public class ProfileFragment extends Fragment {
     private RecyclerView recyclerView;
     private PostsAdapter adapter;
     private long userId;
+    
+    private TextView tvPostCount, tvFollowCount, tvFanCount;
+    private TabLayout tabLayout;
+
+    // Use Activity Result API instead of deprecated startActivityForResult
+    private final ActivityResultLauncher<Intent> pickAvatarLauncher = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            result -> {
+                if (result.getResultCode() == Activity.RESULT_OK && result.getData() != null) {
+                    Intent data = result.getData();
+                    if (data.getData() != null) {
+                        Uri uri = data.getData();
+                        final int takeFlags = data.getFlags()
+                                & (Intent.FLAG_GRANT_READ_URI_PERMISSION
+                                | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+                        try {
+                            requireContext().getContentResolver().takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                        } catch (SecurityException e) {
+                            e.printStackTrace();
+                        }
+                        if (profileViewModel != null) {
+                            profileViewModel.updateAvatar(userId, uri.toString());
+                        }
+                    }
+                }
+            }
+    );
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -46,6 +77,11 @@ public class ProfileFragment extends Fragment {
         tvUsername = root.findViewById(R.id.tvProfileName);
         recyclerView = root.findViewById(R.id.rvProfilePosts);
         ImageView ivSettings = root.findViewById(R.id.ivSettings);
+        
+        tvPostCount = root.findViewById(R.id.tvPostCount);
+        tvFollowCount = root.findViewById(R.id.tvFollowCount);
+        tvFanCount = root.findViewById(R.id.tvFanCount);
+        tabLayout = root.findViewById(R.id.tabLayout);
 
         // Setup RecyclerView
         recyclerView.setLayoutManager(new StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL));
@@ -73,7 +109,17 @@ public class ProfileFragment extends Fragment {
 
             profileViewModel.getUserPosts(userId).observe(getViewLifecycleOwner(), posts -> {
                 adapter.setPosts(posts);
+                if (profileViewModel.getUserPosts(userId) != null && tabLayout.getSelectedTabPosition() == 0) {
+                    // A bit tricky to update count only for "My Posts" tab from here without more logic,
+                    // but we can just update if current tab is 0 or rely on list size
+                    if (tabLayout.getSelectedTabPosition() == 0) {
+                        tvPostCount.setText(String.valueOf(posts.size()));
+                    }
+                }
             });
+            
+            profileViewModel.getFollowingCount(userId).observe(getViewLifecycleOwner(), count -> tvFollowCount.setText(String.valueOf(count)));
+            profileViewModel.getFollowerCount(userId).observe(getViewLifecycleOwner(), count -> tvFanCount.setText(String.valueOf(count)));
         }
 
         ivSettings.setOnClickListener(v -> showSettingsMenu(v));
@@ -83,6 +129,43 @@ public class ProfileFragment extends Fragment {
         
         // Click name to change
         tvUsername.setOnClickListener(v -> showChangeNameDialog());
+        
+        // Tab Layout
+        tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
+            @Override
+            public void onTabSelected(TabLayout.Tab tab) {
+                profileViewModel.setTab(tab.getPosition());
+                if (tab.getPosition() == 0) {
+                    // Re-fetch or observe already does it? 
+                    // The switchMap in VM will handle data source change
+                }
+            }
+            @Override public void onTabUnselected(TabLayout.Tab tab) {}
+            @Override public void onTabReselected(TabLayout.Tab tab) {}
+        });
+
+        // Click listeners for lists
+        View.OnClickListener followListener = v -> {
+            Intent intent = new Intent(getActivity(), FollowListActivity.class);
+            intent.putExtra(FollowListActivity.EXTRA_USER_ID, userId);
+            intent.putExtra(FollowListActivity.EXTRA_TYPE, 0);
+            intent.putExtra(FollowListActivity.EXTRA_TITLE, "我的关注");
+            startActivity(intent);
+        };
+        
+        // Bind listeners to container
+        root.findViewById(R.id.llFollowContainer).setOnClickListener(followListener);
+        
+        View.OnClickListener fanListener = v -> {
+            Intent intent = new Intent(getActivity(), FollowListActivity.class);
+            intent.putExtra(FollowListActivity.EXTRA_USER_ID, userId);
+            intent.putExtra(FollowListActivity.EXTRA_TYPE, 1);
+            intent.putExtra(FollowListActivity.EXTRA_TITLE, "我的粉丝");
+            startActivity(intent);
+        };
+        
+        // Bind listeners to container
+        root.findViewById(R.id.llFanContainer).setOnClickListener(fanListener);
 
         return root;
     }
@@ -114,24 +197,7 @@ public class ProfileFragment extends Fragment {
         Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
         intent.addCategory(Intent.CATEGORY_OPENABLE);
         intent.setType("image/*");
-        startActivityForResult(intent, PICK_AVATAR_REQUEST);
-    }
-
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == PICK_AVATAR_REQUEST && resultCode == android.app.Activity.RESULT_OK && data != null && data.getData() != null) {
-            Uri uri = data.getData();
-            final int takeFlags = data.getFlags()
-                    & (Intent.FLAG_GRANT_READ_URI_PERMISSION
-                    | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
-            try {
-                requireContext().getContentResolver().takePersistableUriPermission(uri, takeFlags);
-            } catch (SecurityException e) {
-                e.printStackTrace();
-            }
-            profileViewModel.updateAvatar(userId, uri.toString());
-        }
+        pickAvatarLauncher.launch(intent);
     }
 
     private void showChangeNameDialog() {

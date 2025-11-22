@@ -16,11 +16,21 @@ public class MainActivity extends AppCompatActivity {
 
         BottomNavigationView navView = findViewById(R.id.nav_view);
         
-        // Load HomeFragment initially
+        // Load HomeFragment initially or Profile if requested
         if (savedInstanceState == null) {
-            getSupportFragmentManager().beginTransaction()
-                    .replace(R.id.nav_host_fragment, new HomeFragment())
-                    .commit();
+            if (getIntent().getBooleanExtra("open_profile", false)) {
+                getSupportFragmentManager().beginTransaction()
+                        .replace(R.id.nav_host_fragment, new ProfileFragment())
+                        .commit();
+                navView.setSelectedItemId(R.id.navigation_profile);
+            } else {
+                getSupportFragmentManager().beginTransaction()
+                        .replace(R.id.nav_host_fragment, new HomeFragment())
+                        .commit();
+            }
+        } else {
+             // Handle potential intent when activity is recreated or singleTop/singleTask
+             // But usually onCreate is for fresh start or rotation
         }
 
         navView.setOnItemSelectedListener(item -> {
@@ -41,5 +51,14 @@ public class MainActivity extends AppCompatActivity {
             }
             return false;
         });
+    }
+    
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        if (intent.getBooleanExtra("open_profile", false)) {
+            BottomNavigationView navView = findViewById(R.id.nav_view);
+            navView.setSelectedItemId(R.id.navigation_profile);
+        }
     }
 }

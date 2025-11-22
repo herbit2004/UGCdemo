@@ -7,10 +7,12 @@ import androidx.room.Room;
 import androidx.room.RoomDatabase;
 import androidx.sqlite.db.SupportSQLiteDatabase;
 import com.bytecamp.herbit.ugcdemo.data.dao.CommentDao;
+import com.bytecamp.herbit.ugcdemo.data.dao.FollowDao;
 import com.bytecamp.herbit.ugcdemo.data.dao.LikeDao;
 import com.bytecamp.herbit.ugcdemo.data.dao.PostDao;
 import com.bytecamp.herbit.ugcdemo.data.dao.UserDao;
 import com.bytecamp.herbit.ugcdemo.data.entity.Comment;
+import com.bytecamp.herbit.ugcdemo.data.entity.Follow;
 import com.bytecamp.herbit.ugcdemo.data.entity.Like;
 import com.bytecamp.herbit.ugcdemo.data.entity.Post;
 import com.bytecamp.herbit.ugcdemo.data.entity.User;
@@ -20,10 +22,10 @@ import java.util.concurrent.Executors;
 /**
  * AppDatabase
  * 全局唯一的 Room 数据库实例。
- * 包含 User, Post, Comment, Like 四张表。
+ * 包含 User, Post, Comment, Like, Follow 五张表。
  * 配置了 fallbackToDestructiveMigration 允许在开发阶段破坏性升级。
  */
-@Database(entities = {User.class, Post.class, Comment.class, Like.class}, version = 2, exportSchema = false)
+@Database(entities = {User.class, Post.class, Comment.class, Like.class, Follow.class}, version = 4, exportSchema = false)
 public abstract class AppDatabase extends RoomDatabase {
     
     // DAO 访问接口
@@ -31,6 +33,7 @@ public abstract class AppDatabase extends RoomDatabase {
     public abstract PostDao postDao();
     public abstract CommentDao commentDao();
     public abstract LikeDao likeDao();
+    public abstract FollowDao followDao();
 
     private static volatile AppDatabase INSTANCE;
     

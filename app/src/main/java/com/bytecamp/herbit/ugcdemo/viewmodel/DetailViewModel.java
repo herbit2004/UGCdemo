@@ -5,9 +5,11 @@ import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import com.bytecamp.herbit.ugcdemo.data.AppDatabase;
 import com.bytecamp.herbit.ugcdemo.data.dao.CommentDao;
+import com.bytecamp.herbit.ugcdemo.data.dao.FollowDao;
 import com.bytecamp.herbit.ugcdemo.data.dao.LikeDao;
 import com.bytecamp.herbit.ugcdemo.data.dao.PostDao;
 import com.bytecamp.herbit.ugcdemo.data.entity.Comment;
+import com.bytecamp.herbit.ugcdemo.data.entity.Follow;
 import com.bytecamp.herbit.ugcdemo.data.entity.Like;
 import com.bytecamp.herbit.ugcdemo.data.model.CommentLikeCount;
 import com.bytecamp.herbit.ugcdemo.data.model.CommentWithUser;
@@ -18,6 +20,7 @@ public class DetailViewModel extends AndroidViewModel {
     private PostDao postDao;
     private CommentDao commentDao;
     private LikeDao likeDao;
+    private FollowDao followDao;
 
     public DetailViewModel(Application application) {
         super(application);
@@ -25,6 +28,7 @@ public class DetailViewModel extends AndroidViewModel {
         postDao = db.postDao();
         commentDao = db.commentDao();
         likeDao = db.likeDao();
+        followDao = db.followDao();
     }
 
     public LiveData<PostWithUser> getPostById(long postId) {
@@ -82,6 +86,20 @@ public class DetailViewModel extends AndroidViewModel {
     public void deleteComment(long commentId) {
         AppDatabase.databaseWriteExecutor.execute(() -> {
             commentDao.deleteById(commentId);
+        });
+    }
+
+    public LiveData<Integer> isFollowing(long followerId, long followeeId) {
+        return followDao.isFollowing(followerId, followeeId);
+    }
+
+    public void toggleFollow(long followerId, long followeeId, boolean isFollowing) {
+        AppDatabase.databaseWriteExecutor.execute(() -> {
+            if (isFollowing) {
+                followDao.deleteFollow(followerId, followeeId);
+            } else {
+                followDao.insertFollow(new Follow(followerId, followeeId, System.currentTimeMillis()));
+            }
         });
     }
 }

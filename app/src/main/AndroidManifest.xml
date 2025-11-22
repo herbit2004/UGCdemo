@@ -27,7 +27,8 @@
 
         <activity
             android:name=".MainActivity"
-            android:exported="false" />
+            android:exported="false"
+            android:windowSoftInputMode="adjustPan"/>
             
         <activity
             android:name=".PublishActivity"
@@ -37,7 +38,24 @@
         <activity
             android:name=".DetailActivity"
             android:exported="false"
-            android:label="详情" />
+            android:label="详情"
+            android:windowSoftInputMode="adjustResize"/>
+
+        <activity
+            android:name=".SearchActivity"
+            android:exported="false"
+            android:label="搜索"
+            android:windowSoftInputMode="stateVisible|adjustResize"/>
+
+        <activity
+            android:name=".UserProfileActivity"
+            android:exported="false"
+            android:label="用户主页" />
+
+        <activity
+            android:name=".FollowListActivity"
+            android:exported="false"
+            android:label="列表" />
             
     </application>
 

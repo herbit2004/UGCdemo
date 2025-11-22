@@ -1,6 +1,7 @@
 package com.bytecamp.herbit.ugcdemo;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -39,6 +40,7 @@ import java.util.List;
  * 2. 展示评论列表，支持回复评论、删除自己的评论。
  * 3. 支持帖子和评论的点赞功能（实时更新状态和数量）。
  * 4. 楼主可删除自己的帖子。
+ * 5. 支持关注楼主。
  */
 public class DetailActivity extends AppCompatActivity {
     public static final String EXTRA_POST_ID = "extra_post_id";
@@ -47,6 +49,7 @@ public class DetailActivity extends AppCompatActivity {
     private DetailViewModel detailViewModel;
     private long postId;
     private long currentUserId;
+    private long authorId = -1;
     private List<Long> likedCommentIds = new ArrayList<>();
     private Long replyToCommentId = null;
     private String replyToUsername = null;
@@ -62,6 +65,7 @@ public class DetailActivity extends AppCompatActivity {
     private TextView tvTitle, tvContent, tvPublishTime;
     private ImageView ivHeaderAvatar;
     private TextView tvHeaderName;
+    private Button btnFollow;
     private ImageView ivMoreOptions;
     private RecyclerView rvComments;
     private EditText etComment;
@@ -106,6 +110,7 @@ public class DetailActivity extends AppCompatActivity {
         // Header
         ivHeaderAvatar = findViewById(R.id.ivHeaderAvatar);
         tvHeaderName = findViewById(R.id.tvHeaderName);
+        btnFollow = findViewById(R.id.btnFollow);
         ivMoreOptions = findViewById(R.id.ivMoreOptions);
 
         // Content
@@ -172,6 +177,23 @@ public class DetailActivity extends AppCompatActivity {
             public void onDelete(CommentWithUser comment) {
                 showDeleteCommentDialog(comment);
             }
+            
+            @Override
+            public void onUserClick(long userId) {
+                navigateToUserProfile(userId);
+            }
+        });
+        
+        // 点击头像跳转个人主页
+        ivHeaderAvatar.setOnClickListener(v -> {
+            if (authorId != -1) {
+                navigateToUserProfile(authorId);
+            }
+        });
+        tvHeaderName.setOnClickListener(v -> {
+            if (authorId != -1) {
+                navigateToUserProfile(authorId);
+            }
         });
     }
 
@@ -204,6 +226,8 @@ public class DetailActivity extends AppCompatActivity {
 
     private void updatePostUI(PostWithUser postWithUser) {
         if (postWithUser == null || postWithUser.post == null) return;
+        
+        authorId = postWithUser.post.author_id;
 
         // 设置内容
         tvTitle.setText(postWithUser.post.title);
@@ -234,7 +258,7 @@ public class DetailActivity extends AppCompatActivity {
         }
 
         // 处理作者信息
-        commentsAdapter.setPostAuthorId(postWithUser.post.author_id);
+        commentsAdapter.setPostAuthorId(authorId);
         if (postWithUser.user != null) {
             tvHeaderName.setText(postWithUser.user.username);
             if (postWithUser.user.avatar_path != null) {
@@ -243,11 +267,33 @@ public class DetailActivity extends AppCompatActivity {
         }
 
         // 处理更多菜单 (删除帖子)
-        if (postWithUser.post.author_id == currentUserId) {
+        if (authorId == currentUserId) {
             ivMoreOptions.setVisibility(View.VISIBLE);
             ivMoreOptions.setOnClickListener(this::showPostMenu);
+            btnFollow.setVisibility(View.GONE);
         } else {
             ivMoreOptions.setVisibility(View.GONE);
+            // Setup Follow Button
+            setupFollowButton();
+        }
+    }
+    
+    private void setupFollowButton() {
+        btnFollow.setVisibility(View.VISIBLE);
+        detailViewModel.isFollowing(currentUserId, authorId).observe(this, count -> {
+            boolean isFollowing = count != null && count > 0;
+            updateFollowButtonState(isFollowing);
+            btnFollow.setOnClickListener(v -> detailViewModel.toggleFollow(currentUserId, authorId, isFollowing));
+        });
+    }
+    
+    private void updateFollowButtonState(boolean isFollowing) {
+        if (isFollowing) {
+            btnFollow.setText("已关注");
+            // Removed color change, keeping default/xml white text
+        } else {
+            btnFollow.setText("关注");
+            // Removed color change
         }
     }
 
@@ -298,5 +344,19 @@ public class DetailActivity extends AppCompatActivity {
                 .setPositiveButton("删除", (d, w) -> detailViewModel.deleteComment(comment.comment.comment_id))
                 .setNegativeButton("取消", null)
                 .show();
+    }
+    
+    private void navigateToUserProfile(long targetUserId) {
+        if (targetUserId == currentUserId) {
+            // It's the current user, maybe we want to switch to main activity profile tab?
+            // For now, just finish to go back or start MainActivity with extra
+             Intent intent = new Intent(this, MainActivity.class);
+             intent.putExtra("open_profile", true);
+             startActivity(intent);
+        } else {
+            Intent intent = new Intent(this, UserProfileActivity.class);
+            intent.putExtra(UserProfileActivity.EXTRA_USER_ID, targetUserId);
+            startActivity(intent);
+        }
     }
 }

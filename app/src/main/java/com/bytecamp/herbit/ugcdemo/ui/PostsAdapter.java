@@ -12,7 +12,9 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import com.bytecamp.herbit.ugcdemo.DetailActivity;
+import com.bytecamp.herbit.ugcdemo.MainActivity;
 import com.bytecamp.herbit.ugcdemo.R;
+import com.bytecamp.herbit.ugcdemo.UserProfileActivity;
 import com.bytecamp.herbit.ugcdemo.data.model.PostCardItem;
 import java.util.ArrayList;
 import java.util.List;
@@ -111,6 +113,25 @@ public class PostsAdapter extends RecyclerView.Adapter<PostsAdapter.PostViewHold
                 intent.putExtra(DetailActivity.EXTRA_POST_ID, item.post.post_id);
                 context.startActivity(intent);
             });
+            
+            View.OnClickListener profileListener = v -> {
+                if (item.post.author_id == getCurrentUserId(context)) {
+                    Intent intent = new Intent(context, MainActivity.class);
+                    intent.putExtra("open_profile", true);
+                    context.startActivity(intent);
+                } else {
+                    Intent intent = new Intent(context, UserProfileActivity.class);
+                    intent.putExtra(UserProfileActivity.EXTRA_USER_ID, item.post.author_id);
+                    context.startActivity(intent);
+                }
+            };
+            
+            ivAuthorAvatar.setOnClickListener(profileListener);
+            tvAuthorName.setOnClickListener(profileListener);
+        }
+        
+        private long getCurrentUserId(Context context) {
+            return context.getSharedPreferences("ugc_prefs", Context.MODE_PRIVATE).getLong("user_id", -1);
         }
 
         private String extractFirstImage(String imagePath) {
