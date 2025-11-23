@@ -80,11 +80,12 @@
                 android:layout_height="wrap_content"
                 android:gravity="center_vertical"
                 android:layout_marginStart="4dp">
+
                 <ImageView
-                    android:layout_width="@dimen/icon_size"
-                    android:layout_height="@dimen/icon_size"
-                    android:src="@drawable/ic_like"
-                    android:alpha="0.5"/>
+                    android:layout_width="wrap_content"
+                    android:layout_height="14dp"
+                    android:alpha="0.5"
+                    android:src="@drawable/ic_like" />
                 <TextView
                     android:id="@+id/tvLikeCount"
                     android:layout_width="wrap_content"
@@ -101,11 +102,12 @@
                 android:layout_height="wrap_content"
                 android:gravity="center_vertical"
                 android:layout_marginStart="4dp">
+
                 <ImageView
-                    android:layout_width="@dimen/icon_size"
-                    android:layout_height="@dimen/icon_size"
-                    android:src="@drawable/ic_comment"
-                    android:alpha="0.5"/>
+                    android:layout_width="wrap_content"
+                    android:layout_height="14dp"
+                    android:alpha="0.5"
+                    android:src="@drawable/ic_comment" />
                 <TextView
                     android:id="@+id/tvCommentCount"
                     android:layout_width="wrap_content"
