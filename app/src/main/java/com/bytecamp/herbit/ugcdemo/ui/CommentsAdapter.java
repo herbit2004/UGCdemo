@@ -19,13 +19,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class CommentsAdapter extends RecyclerView.Adapter<CommentsAdapter.CommentViewHolder> {
+public class CommentsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     private List<CommentWithUser> comments = new ArrayList<>();
     private long postAuthorId;
     private long currentUserId;
     private Set<Long> likedCommentIds = new HashSet<>(); // Store liked comment IDs
     private Map<Long, Integer> likeCounts = new HashMap<>(); // Store like counts
     private OnCommentActionListener listener;
+    private static final int VIEW_COMMENT = 0;
+    private static final int VIEW_FOOTER = 1;
+    private boolean loading = false;
+    private boolean hasMore = true;
 
     public interface OnCommentActionListener {
         void onReply(CommentWithUser comment);
@@ -68,21 +72,40 @@ public class CommentsAdapter extends RecyclerView.Adapter<CommentsAdapter.Commen
 
     @NonNull
     @Override
-    public CommentViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_comment, parent, false);
-        return new CommentViewHolder(view);
+    public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        if (viewType == VIEW_FOOTER) {
+            View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_list_footer, parent, false);
+            return new FooterViewHolder(v);
+        } else {
+            View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_comment, parent, false);
+            return new CommentViewHolder(view);
+        }
     }
 
     @Override
-    public void onBindViewHolder(@NonNull CommentViewHolder holder, int position) {
+    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
+        if (getItemViewType(position) == VIEW_FOOTER) {
+            FooterViewHolder fh = (FooterViewHolder) holder;
+            if (loading) {
+                fh.tvFooter.setText("正在加载...");
+                fh.tvFooter.setVisibility(View.VISIBLE);
+            } else if (!hasMore && comments.size() > 0) {
+                fh.tvFooter.setText("没有更多了");
+                fh.tvFooter.setVisibility(View.VISIBLE);
+            } else {
+                fh.tvFooter.setVisibility(View.GONE);
+            }
+            return;
+        }
         CommentWithUser item = comments.get(position);
+        CommentViewHolder holderC = (CommentViewHolder) holder;
         
         // Author
         String authorName = item.user != null ? item.user.username : "Unknown";
-        holder.tvAuthor.setText(authorName);
+        holderC.tvAuthor.setText(authorName);
         
         // Click on author name to go to profile
-        holder.tvAuthor.setOnClickListener(v -> {
+        holderC.tvAuthor.setOnClickListener(v -> {
             if (listener != null) {
                 listener.onUserClick(item.comment.author_id);
             }
@@ -90,47 +113,47 @@ public class CommentsAdapter extends RecyclerView.Adapter<CommentsAdapter.Commen
         
         // Reply UI
         if (item.comment.reply_to_username != null) {
-            holder.tvContent.setText("回复 " + item.comment.reply_to_username + ": " + item.comment.content);
+            holderC.tvContent.setText("回复 " + item.comment.reply_to_username + ": " + item.comment.content);
         } else {
-            holder.tvContent.setText(item.comment.content);
+            holderC.tvContent.setText(item.comment.content);
         }
         
         // Time
-        holder.tvTime.setText(TimeUtils.formatTime(item.comment.comment_time));
+        holderC.tvTime.setText(TimeUtils.formatTime(item.comment.comment_time));
         
         // Indentation (UI nesting)
-        LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) holder.llContainer.getLayoutParams();
+        LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) holderC.llContainer.getLayoutParams();
         if (item.comment.parent_comment_id != null && item.comment.parent_comment_id != 0) {
-            params.setMarginStart(dpToPx(32)); // Indent
+            params.setMarginStart(dpToPx(32));
         } else {
             params.setMarginStart(0);
         }
-        holder.llContainer.setLayoutParams(params);
+        holderC.llContainer.setLayoutParams(params);
 
         // Badge
         if (item.comment.author_id == postAuthorId) {
-            holder.tvBadge.setVisibility(View.VISIBLE);
+            holderC.tvBadge.setVisibility(View.VISIBLE);
         } else {
-            holder.tvBadge.setVisibility(View.GONE);
+            holderC.tvBadge.setVisibility(View.GONE);
         }
         
         // Like Status
         boolean isLiked = likedCommentIds.contains(item.comment.comment_id);
-        holder.ivLike.setImageResource(isLiked ? R.drawable.ic_like_on : R.drawable.ic_like_off);
+        holderC.ivLike.setImageResource(isLiked ? R.drawable.ic_like_on : R.drawable.ic_like_off);
         
         // Like Count
         int count = 0;
         if (likeCounts.containsKey(item.comment.comment_id)) {
             count = likeCounts.get(item.comment.comment_id);
         }
-        holder.tvLikeCount.setText(String.valueOf(count));
+        holderC.tvLikeCount.setText(String.valueOf(count));
         
         // Listeners
-        holder.itemView.setOnClickListener(v -> {
+        holderC.itemView.setOnClickListener(v -> {
             if (listener != null) listener.onReply(item);
         });
         
-        holder.itemView.setOnLongClickListener(v -> {
+        holderC.itemView.setOnLongClickListener(v -> {
             if (listener != null && item.comment.author_id == currentUserId) {
                 listener.onDelete(item);
                 return true;
@@ -138,7 +161,7 @@ public class CommentsAdapter extends RecyclerView.Adapter<CommentsAdapter.Commen
             return false;
         });
         
-        View likeContainer = ((ViewGroup) holder.ivLike.getParent());
+        View likeContainer = ((ViewGroup) holderC.ivLike.getParent());
         likeContainer.setOnClickListener(v -> {
             if (listener != null) listener.onLike(item);
         });
@@ -150,7 +173,25 @@ public class CommentsAdapter extends RecyclerView.Adapter<CommentsAdapter.Commen
 
     @Override
     public int getItemCount() {
-        return comments.size();
+        boolean showFooter = loading || (!hasMore && comments.size() > 0);
+        return comments.size() + (showFooter ? 1 : 0);
+    }
+
+    @Override
+    public int getItemViewType(int position) {
+        boolean showFooter = loading || (!hasMore && comments.size() > 0);
+        if (showFooter && position == getItemCount() - 1) return VIEW_FOOTER;
+        return VIEW_COMMENT;
+    }
+
+    public void setLoading(boolean loading) {
+        this.loading = loading;
+        notifyItemChanged(getItemCount() - 1);
+    }
+
+    public void setHasMore(boolean hasMore) {
+        this.hasMore = hasMore;
+        notifyItemChanged(getItemCount() - 1);
     }
 
     static class CommentViewHolder extends RecyclerView.ViewHolder {
@@ -167,6 +208,13 @@ public class CommentsAdapter extends RecyclerView.Adapter<CommentsAdapter.Commen
             tvTime = itemView.findViewById(R.id.tvCommentTime);
             ivLike = itemView.findViewById(R.id.ivCommentLike);
             llContainer = itemView.findViewById(R.id.llCommentContainer);
+        }
+    }
+    static class FooterViewHolder extends RecyclerView.ViewHolder {
+        TextView tvFooter;
+        FooterViewHolder(View itemView) {
+            super(itemView);
+            tvFooter = itemView.findViewById(R.id.tvFooter);
         }
     }
 }

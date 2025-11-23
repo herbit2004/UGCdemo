@@ -3,6 +3,7 @@ package com.bytecamp.herbit.ugcdemo.viewmodel;
 import android.app.Application;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
+import androidx.lifecycle.MutableLiveData;
 import com.bytecamp.herbit.ugcdemo.data.AppDatabase;
 import com.bytecamp.herbit.ugcdemo.data.dao.CommentDao;
 import com.bytecamp.herbit.ugcdemo.data.dao.FollowDao;
@@ -21,6 +22,12 @@ public class DetailViewModel extends AndroidViewModel {
     private CommentDao commentDao;
     private LikeDao likeDao;
     private FollowDao followDao;
+    private MutableLiveData<java.util.List<com.bytecamp.herbit.ugcdemo.data.model.CommentWithUser>> commentsPaged = new MutableLiveData<>();
+    private int pageSizeTop = 10;
+    private int offsetTop = 0;
+    private boolean hasMoreTop = true;
+    private boolean loadingComments = false;
+    private long currentPostId = -1;
 
     public DetailViewModel(Application application) {
         super(application);
@@ -38,6 +45,48 @@ public class DetailViewModel extends AndroidViewModel {
     public LiveData<List<CommentWithUser>> getCommentsForPost(long postId) {
         return commentDao.getCommentsForPost(postId);
     }
+
+    public LiveData<java.util.List<com.bytecamp.herbit.ugcdemo.data.model.CommentWithUser>> getCommentsPaged() {
+        return commentsPaged;
+    }
+
+    public void initComments(long postId) {
+        currentPostId = postId;
+        refreshComments();
+    }
+
+    public void refreshComments() {
+        if (currentPostId == -1) return;
+        offsetTop = 0;
+        hasMoreTop = true;
+        commentsPaged.postValue(new java.util.ArrayList<>());
+        loadMoreComments();
+    }
+
+    public void loadMoreComments() {
+        if (loadingComments || !hasMoreTop || currentPostId == -1) return;
+        loadingComments = true;
+        AppDatabase.databaseWriteExecutor.execute(() -> {
+            java.util.List<com.bytecamp.herbit.ugcdemo.data.model.CommentWithUser> topPage = commentDao.getTopLevelCommentsForPostPaged(currentPostId, pageSizeTop, offsetTop);
+            java.util.ArrayList<com.bytecamp.herbit.ugcdemo.data.model.CommentWithUser> flattened = new java.util.ArrayList<>();
+            for (com.bytecamp.herbit.ugcdemo.data.model.CommentWithUser top : topPage) {
+                flattened.add(top);
+                java.util.List<com.bytecamp.herbit.ugcdemo.data.model.CommentWithUser> replies = commentDao.getRepliesForParent(top.comment.comment_id);
+                flattened.addAll(replies);
+            }
+            try { Thread.sleep(700); } catch (InterruptedException ignored) {}
+            java.util.List<com.bytecamp.herbit.ugcdemo.data.model.CommentWithUser> current = commentsPaged.getValue();
+            if (current == null) current = new java.util.ArrayList<>();
+            java.util.ArrayList<com.bytecamp.herbit.ugcdemo.data.model.CommentWithUser> merged = new java.util.ArrayList<>(current);
+            merged.addAll(flattened);
+            offsetTop += topPage.size();
+            hasMoreTop = topPage.size() == pageSizeTop;
+            loadingComments = false;
+            commentsPaged.postValue(merged);
+        });
+    }
+
+    public boolean hasMoreComments() { return hasMoreTop; }
 
     public void addComment(long postId, long authorId, String content, Long parentCommentId, String replyToUsername) {
         AppDatabase.databaseWriteExecutor.execute(() -> {

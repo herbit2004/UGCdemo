@@ -22,6 +22,7 @@ public class FollowListActivity extends AppCompatActivity {
     private UserListAdapter adapter;
     private long userId;
     private int type;
+    private long currentUserId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -32,6 +33,7 @@ public class FollowListActivity extends AppCompatActivity {
         userId = getIntent().getLongExtra(EXTRA_USER_ID, -1);
         type = getIntent().getIntExtra(EXTRA_TYPE, 0);
         String title = getIntent().getStringExtra(EXTRA_TITLE);
+        currentUserId = getSharedPreferences("ugc_prefs", MODE_PRIVATE).getLong("user_id", -1);
 
         if (userId == -1) {
             finish();
@@ -52,13 +54,12 @@ public class FollowListActivity extends AppCompatActivity {
         recyclerView = findViewById(R.id.recyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         
-        boolean canUnfollow = (type == 0 && userId == getSharedPreferences("ugc_prefs", MODE_PRIVATE).getLong("user_id", -1));
-        adapter = new UserListAdapter(canUnfollow, user -> {
-             // Toggle follow logic if needed or open profile
-             // For simplicity, let's just allow unfollowing in list if it's "My Following" list
-             if (canUnfollow) {
-                 viewModel.unfollow(getSharedPreferences("ugc_prefs", MODE_PRIVATE).getLong("user_id", -1), user.user_id);
-             }
+        adapter = new UserListAdapter((user, isFollowing) -> {
+            if (isFollowing) {
+                viewModel.unfollow(currentUserId, user.user_id);
+            } else {
+                viewModel.follow(currentUserId, user.user_id);
+            }
         });
         // Click on item to go to profile
         adapter.setOnItemClickListener(user -> {
@@ -75,9 +76,23 @@ public class FollowListActivity extends AppCompatActivity {
         viewModel = new ViewModelProvider(this).get(FollowListViewModel.class);
         
         if (type == 0) {
-            viewModel.getFollowingList(userId).observe(this, users -> adapter.setUsers(users));
+            viewModel.getFollowingList(userId).observe(this, new androidx.lifecycle.Observer<java.util.List<com.bytecamp.herbit.ugcdemo.data.entity.User>>() {
+                private boolean initialized = false;
+                @Override
+                public void onChanged(java.util.List<com.bytecamp.herbit.ugcdemo.data.entity.User> users) {
+                    if (!initialized) {
+                        adapter.setUsers(users);
+                        initialized = true;
+                    }
+                }
+            });
         } else {
             viewModel.getFollowerList(userId).observe(this, users -> adapter.setUsers(users));
         }
+        viewModel.getFollowingList(currentUserId).observe(this, myFollowing -> {
+            java.util.Set<Long> ids = new java.util.HashSet<>();
+            for (com.bytecamp.herbit.ugcdemo.data.entity.User u : myFollowing) ids.add(u.user_id);
+            adapter.setFollowingIds(ids);
+        });
     }
 }

@@ -24,9 +24,13 @@ import java.util.List;
  * 首页瀑布流适配器。
  * 负责展示帖子卡片，包括图片封面或文字封面、作者信息以及统计数据。
  */
-public class PostsAdapter extends RecyclerView.Adapter<PostsAdapter.PostViewHolder> {
+public class PostsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     private List<PostCardItem> posts = new ArrayList<>();
+    private static final int VIEW_POST = 0;
+    private static final int VIEW_FOOTER = 1;
+    private boolean loading = false;
+    private boolean hasMore = true;
 
     /**
      * 更新帖子列表数据
@@ -37,22 +41,60 @@ public class PostsAdapter extends RecyclerView.Adapter<PostsAdapter.PostViewHold
         notifyDataSetChanged();
     }
 
+    public void setLoading(boolean loading) {
+        this.loading = loading;
+        notifyItemChanged(getItemCount() - 1);
+    }
+
+    public void setHasMore(boolean hasMore) {
+        this.hasMore = hasMore;
+        notifyItemChanged(getItemCount() - 1);
+    }
+
     @NonNull
     @Override
-    public PostViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+    public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         Context context = parent.getContext();
-        View view = LayoutInflater.from(context).inflate(R.layout.item_post, parent, false);
-        return new PostViewHolder(view);
+        LayoutInflater inflater = LayoutInflater.from(context);
+        if (viewType == VIEW_FOOTER) {
+            View view = inflater.inflate(R.layout.item_list_footer, parent, false);
+            return new FooterViewHolder(view);
+        } else {
+            View view = inflater.inflate(R.layout.item_post, parent, false);
+            return new PostViewHolder(view);
+        }
     }
 
     @Override
-    public void onBindViewHolder(@NonNull PostViewHolder holder, int position) {
-        holder.bind(posts.get(position));
+    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
+        if (getItemViewType(position) == VIEW_FOOTER) {
+            FooterViewHolder fh = (FooterViewHolder) holder;
+            if (loading) {
+                fh.tvFooter.setText("正在加载...");
+                fh.tvFooter.setVisibility(View.VISIBLE);
+            } else if (!hasMore && posts.size() > 0) {
+                fh.tvFooter.setText("没有更多了");
+                fh.tvFooter.setVisibility(View.VISIBLE);
+            } else {
+                fh.tvFooter.setVisibility(View.GONE);
+            }
+        } else {
+            PostViewHolder ph = (PostViewHolder) holder;
+            ph.bind(posts.get(position));
+        }
     }
 
     @Override
     public int getItemCount() {
-        return posts.size();
+        boolean showFooter = loading || (!hasMore && posts.size() > 0);
+        return posts.size() + (showFooter ? 1 : 0);
+    }
+
+    @Override
+    public int getItemViewType(int position) {
+        boolean showFooter = loading || (!hasMore && posts.size() > 0);
+        if (showFooter && position == getItemCount() - 1) return VIEW_FOOTER;
+        return VIEW_POST;
     }
 
     /**
@@ -161,6 +203,14 @@ public class PostsAdapter extends RecyclerView.Adapter<PostsAdapter.PostViewHold
             tvCoverTitle.setVisibility(View.VISIBLE);
             tvCoverQuote.setVisibility(View.VISIBLE);
             tvCoverTitle.setText(title);
+        }
+    }
+
+    static class FooterViewHolder extends RecyclerView.ViewHolder {
+        TextView tvFooter;
+        FooterViewHolder(@NonNull View itemView) {
+            super(itemView);
+            tvFooter = itemView.findViewById(R.id.tvFooter);
         }
     }
 }

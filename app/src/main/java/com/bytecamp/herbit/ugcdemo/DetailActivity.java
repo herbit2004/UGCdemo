@@ -14,6 +14,7 @@ import android.widget.LinearLayout;
 import android.widget.PopupMenu;
 import android.widget.TextView;
 import androidx.appcompat.app.AlertDialog;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import com.bytecamp.herbit.ugcdemo.util.ThemeUtils;
@@ -136,6 +137,28 @@ public class DetailActivity extends AppCompatActivity {
         commentsAdapter = new CommentsAdapter();
         commentsAdapter.setCurrentUserId(currentUserId);
         rvComments.setAdapter(commentsAdapter);
+        rvComments.addOnScrollListener(new RecyclerView.OnScrollListener(){
+            private long lastLoadTime = 0L;
+            @Override
+            public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
+                if (dy > 0) {
+                    LinearLayoutManager lm = (LinearLayoutManager) recyclerView.getLayoutManager();
+                    if (lm == null) return;
+                    int lastPos = lm.findLastVisibleItemPosition();
+                    RecyclerView.Adapter a = recyclerView.getAdapter();
+                    if (a != null && lastPos >= Math.max(0, a.getItemCount() - 3)) {
+                        long now = System.currentTimeMillis();
+                        if (detailViewModel.hasMoreComments() && now - lastLoadTime > 700) {
+                            if (a instanceof CommentsAdapter) {
+                                ((CommentsAdapter) a).setLoading(true);
+                            }
+                            detailViewModel.loadMoreComments();
+                            lastLoadTime = now;
+                        }
+                    }
+                }
+            }
+        });
 
         // Input Area
         etComment = findViewById(R.id.etComment);
@@ -158,6 +181,7 @@ public class DetailActivity extends AppCompatActivity {
             if (!TextUtils.isEmpty(content)) {
                 detailViewModel.addComment(postId, currentUserId, content, replyToCommentId, replyToUsername);
                 exitReplyMode();
+                detailViewModel.refreshComments();
             }
         });
 
@@ -205,8 +229,13 @@ public class DetailActivity extends AppCompatActivity {
         // 1. 帖子详情
         detailViewModel.getPostById(postId).observe(this, this::updatePostUI);
 
-        // 2. 评论列表
-        detailViewModel.getCommentsForPost(postId).observe(this, comments -> commentsAdapter.setComments(comments));
+        // 2. 评论列表（分页，顶层+子回复展平）
+        detailViewModel.getCommentsPaged().observe(this, comments -> {
+            commentsAdapter.setComments(comments);
+            commentsAdapter.setLoading(false);
+            commentsAdapter.setHasMore(detailViewModel.hasMoreComments());
+        });
+        detailViewModel.initComments(postId);
 
         // 3. 帖子点赞数
         detailViewModel.getLikeCount(0, postId).observe(this, count -> tvLikeCount.setText(String.valueOf(count)));

@@ -99,23 +99,36 @@ public class HomeFragment extends Fragment {
     private void setupViewModel() {
         homeViewModel = new ViewModelProvider(this).get(HomeViewModel.class);
         
-        homeViewModel.getPosts().observe(getViewLifecycleOwner(), posts -> {
-            int tab = homeViewModel.getCurrentTab();
-            if (tab == 0) {
-                adapterHome.setPosts(posts);
-            } else {
-                adapterFollow.setPosts(posts);
-            }
+        homeViewModel.getHomePosts().observe(getViewLifecycleOwner(), posts -> {
+            adapterHome.setPosts(posts);
+            adapterHome.setLoading(false);
+            adapterHome.setHasMore(homeViewModel.hasMore(0));
+        });
+        homeViewModel.getFollowPosts().observe(getViewLifecycleOwner(), posts -> {
+            adapterFollow.setPosts(posts);
+            adapterFollow.setLoading(false);
+            adapterFollow.setHasMore(homeViewModel.hasMore(1));
         });
         
         // Remove UI updates from tab LiveData to avoid double animations
         
         // Observe Sort changes to update UI high light
         homeViewModel.getCurrentSortLiveData().observe(getViewLifecycleOwner(), sort -> {
-            int activeColor = getAttrColor(requireContext(), com.google.android.material.R.attr.colorSecondary);
-            int inactiveColor = Color.BLACK;
-            ivSort.setColorFilter(sort != 0 ? activeColor : inactiveColor);
+            // Use clear color filter to show original black icon instead of tinting it
+            if (sort == 0) {
+                ivSort.clearColorFilter();
+            } else {
+                int activeColor = getAttrColor(requireContext(), com.google.android.material.R.attr.colorSecondary);
+                ivSort.setColorFilter(activeColor);
+            }
         });
+
+        if (homeViewModel.getHomePosts().getValue() == null || (homeViewModel.getHomePosts().getValue() != null && homeViewModel.getHomePosts().getValue().isEmpty())) {
+            homeViewModel.refresh(0);
+        }
+        if (homeViewModel.getFollowPosts().getValue() == null || (homeViewModel.getFollowPosts().getValue() != null && homeViewModel.getFollowPosts().getValue().isEmpty())) {
+            homeViewModel.refresh(1);
+        }
     }
 
     private void updateTabUI(int tabIndex) {
@@ -185,14 +198,21 @@ public class HomeFragment extends Fragment {
 
     public void refreshCurrent() {
         if (homeViewModel != null) {
-            int currentTab = homeViewModel.getCurrentTab();
-            int currentSort = homeViewModel.getCurrentSort();
-            homeViewModel.setTab(currentTab);
-            homeViewModel.setSort(currentSort);
+            homeViewModel.refresh();
         }
     }
 
+    public void loadMore(int position) {
+        if (homeViewModel != null) homeViewModel.loadMore(position);
+    }
+
+    public boolean hasMore(int position) {
+        return homeViewModel != null && homeViewModel.hasMore(position);
+    }
+
     public static class RecyclerPageFragment extends Fragment {
+        private boolean loadingMore = false;
+        private long lastLoadTime = 0L;
         public RecyclerPageFragment() {}
         public static RecyclerPageFragment newInstance(int position) {
             RecyclerPageFragment f = new RecyclerPageFragment();
@@ -208,10 +228,6 @@ public class HomeFragment extends Fragment {
             View root = inflater.inflate(R.layout.page_home_list, container, false);
             androidx.swiperefreshlayout.widget.SwipeRefreshLayout swipe = root.findViewById(R.id.swipeRefresh);
             RecyclerView rv = root.findViewById(R.id.recyclerView);
-            View emptyView = root.findViewById(R.id.emptyView);
-            View errorView = root.findViewById(R.id.errorView);
-            View btnRetryEmpty = root.findViewById(R.id.btnRetryEmpty);
-            View btnRetryError = root.findViewById(R.id.btnRetryError);
 
             StaggeredGridLayoutManager layoutManager = new StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL);
             layoutManager.setGapStrategy(StaggeredGridLayoutManager.GAP_HANDLING_NONE);
@@ -223,23 +239,20 @@ public class HomeFragment extends Fragment {
                 adapter.registerAdapterDataObserver(new RecyclerView.AdapterDataObserver(){
                     @Override
                     public void onChanged() {
-                        updateState(adapter, emptyView, errorView);
+                        loadingMore = false;
+                        lastLoadTime = System.currentTimeMillis();
+                        HomeFragment p = (HomeFragment) getParentFragment();
+                        if (p != null && adapter instanceof PostsAdapter) {
+                            ((PostsAdapter) adapter).setLoading(false);
+                            ((PostsAdapter) adapter).setHasMore(p.hasMore(position));
+                        }
                     }
                 });
-                updateState(adapter, emptyView, errorView);
+                
             }
 
             swipe.setOnRefreshListener(() -> {
                 swipe.setRefreshing(false);
-                HomeFragment p = (HomeFragment) getParentFragment();
-                if (p != null) p.refreshCurrent();
-            });
-
-            btnRetryEmpty.setOnClickListener(v -> {
-                HomeFragment p = (HomeFragment) getParentFragment();
-                if (p != null) p.refreshCurrent();
-            });
-            btnRetryError.setOnClickListener(v -> {
                 HomeFragment p = (HomeFragment) getParentFragment();
                 if (p != null) p.refreshCurrent();
             });
@@ -252,21 +265,25 @@ public class HomeFragment extends Fragment {
                         layoutManager.findLastVisibleItemPositions(last);
                         int lastPos = Math.max(last[0], last[1]);
                         RecyclerView.Adapter a = recyclerView.getAdapter();
-                        if (a != null && lastPos >= a.getItemCount() - 1) {
+                        if (a != null && lastPos >= Math.max(0, a.getItemCount() - 3)) {
+                            long now = System.currentTimeMillis();
                             HomeFragment p = (HomeFragment) getParentFragment();
-                            if (p != null) p.refreshCurrent();
+                            if (p != null && p.hasMore(position)) {
+                                if (!loadingMore && now - lastLoadTime > 700) {
+                                    loadingMore = true;
+                                    if (a instanceof PostsAdapter) {
+                                        ((PostsAdapter) a).setLoading(true);
+                                    }
+                                    p.loadMore(position);
+                                    lastLoadTime = now;
+                                }
+                            }
                         }
                     }
                 }
             });
 
             return root;
-        }
-
-        private void updateState(RecyclerView.Adapter adapter, View emptyView, View errorView) {
-            boolean isEmpty = adapter == null || adapter.getItemCount() == 0;
-            emptyView.setVisibility(isEmpty ? View.VISIBLE : View.GONE);
-            errorView.setVisibility(View.GONE);
         }
     }
 }

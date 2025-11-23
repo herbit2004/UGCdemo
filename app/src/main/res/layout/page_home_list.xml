@@ -17,50 +17,6 @@
 
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
-    <LinearLayout
-        android:id="@+id/emptyView"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:gravity="center"
-        android:orientation="vertical"
-        android:visibility="gone">
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="暂无内容"
-            android:textSize="16sp"
-            android:textColor="#999999"/>
-        <Button
-            android:id="@+id/btnRetryEmpty"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="重试"
-            android:layout_marginTop="8dp"
-            android:backgroundTint="?attr/colorSecondary"
-            android:textColor="?attr/colorOnSecondary"/>
-    </LinearLayout>
-
-    <LinearLayout
-        android:id="@+id/errorView"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:gravity="center"
-        android:orientation="vertical"
-        android:visibility="gone">
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="加载失败"
-            android:textSize="16sp"
-            android:textColor="#999999"/>
-        <Button
-            android:id="@+id/btnRetryError"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="重试"
-            android:layout_marginTop="8dp"
-            android:backgroundTint="?attr/colorSecondary"
-            android:textColor="?attr/colorOnSecondary"/>
-    </LinearLayout>
+    
 
 </FrameLayout>

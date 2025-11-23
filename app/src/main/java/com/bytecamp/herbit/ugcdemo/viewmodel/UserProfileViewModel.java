@@ -4,7 +4,6 @@ import android.app.Application;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
-import androidx.lifecycle.Transformations;
 import com.bytecamp.herbit.ugcdemo.data.AppDatabase;
 import com.bytecamp.herbit.ugcdemo.data.dao.FollowDao;
 import com.bytecamp.herbit.ugcdemo.data.dao.PostDao;
@@ -20,6 +19,12 @@ public class UserProfileViewModel extends AndroidViewModel {
     private FollowDao followDao;
     
     private MutableLiveData<Integer> currentTab = new MutableLiveData<>(0); // 0: Posts, 1: Liked
+    private MutableLiveData<List<PostCardItem>> posts = new MutableLiveData<>();
+    private int pageSize = 20;
+    private int offset = 0;
+    private boolean hasMore = true;
+    private boolean loading = false;
+    private long profileUserId = -1;
 
     public UserProfileViewModel(Application application) {
         super(application);
@@ -33,18 +38,53 @@ public class UserProfileViewModel extends AndroidViewModel {
         return userDao.getUserById(userId);
     }
 
-    public LiveData<List<PostCardItem>> getPosts(long userId) {
-        return Transformations.switchMap(currentTab, tab -> {
+    public LiveData<List<PostCardItem>> getPosts() {
+        return posts;
+    }
+    
+    public void init(long userId) {
+        this.profileUserId = userId;
+        refresh();
+    }
+    
+    public void refresh() {
+        if (profileUserId == -1) return;
+        offset = 0;
+        hasMore = true;
+        posts.postValue(new java.util.ArrayList<>());
+        loadMore();
+    }
+    
+    public void loadMore() {
+        if (loading || !hasMore || profileUserId == -1) return;
+        loading = true;
+        AppDatabase.databaseWriteExecutor.execute(() -> {
+            int tab = getCurrentTab();
+            List<PostCardItem> page;
             if (tab == 1) {
-                return postDao.getLikedPostCards(userId);
+                page = postDao.getLikedPostCardsPaged(profileUserId, pageSize, offset);
             } else {
-                return postDao.getUserPostCards(userId);
+                page = postDao.getUserPostCardsPaged(profileUserId, pageSize, offset);
             }
+            try { Thread.sleep(700); } catch (InterruptedException ignored) {}
+            List<PostCardItem> current = posts.getValue();
+            if (current == null) current = new java.util.ArrayList<>();
+            java.util.ArrayList<PostCardItem> merged = new java.util.ArrayList<>(current);
+            merged.addAll(page);
+            offset += page.size();
+            hasMore = page.size() == pageSize;
+            loading = false;
+            posts.postValue(merged);
         });
+    }
+    
+    public boolean hasMore() {
+        return hasMore;
     }
     
     public void setTab(int tab) {
         currentTab.setValue(tab);
+        refresh();
     }
     
     public int getCurrentTab() {

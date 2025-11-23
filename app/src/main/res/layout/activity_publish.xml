@@ -6,19 +6,41 @@
     android:padding="16dp">
 
     <TextView
-        android:id="@+id/tvImageCount"
+        android:id="@+id/tvPublishTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="0/9" />
+        android:text="发布笔记"
+        android:textSize="22sp"
+        android:textStyle="bold"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="12dp"
+        android:layout_marginBottom="12dp"/>
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rvImagePreview"
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="120dp"
         android:layout_marginTop="8dp"
-        android:padding="12dp"
-        android:clipToPadding="false"
-        android:background="@color/gray_100" />
+        android:background="@drawable/bg_search_box">
+        
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvImagePreview"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:padding="10dp"
+            android:clipToPadding="false"/>
+        
+        <TextView
+            android:id="@+id/tvImageCount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="0/9"
+            android:textStyle="bold"
+            android:background="@drawable/bg_badge_white_round"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="4dp"
+            android:layout_gravity="bottom|end"
+            android:layout_margin="8dp"/>
+    </FrameLayout>
 
     <EditText
         android:id="@+id/etTitle"

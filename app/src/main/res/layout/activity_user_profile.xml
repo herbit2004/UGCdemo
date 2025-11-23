@@ -25,7 +25,6 @@
             android:text="用户主页"
             android:textSize="18sp"
             android:textStyle="bold"
-            android:textColor="@color/gray_900"
             android:layout_centerInParent="true"/>
             
         <Button
@@ -64,7 +63,6 @@
             android:layout_marginStart="16dp"
             android:textSize="20sp"
             android:textStyle="bold"
-            android:textColor="@color/gray_900"
             android:text="昵称" />
 
     </RelativeLayout>
@@ -166,10 +164,16 @@
             android:text="TA赞过的"/>
     </com.google.android.material.tabs.TabLayout>
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rvProfilePosts"
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+        android:id="@+id/swipeRefresh"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:padding="4dp" />
+        android:layout_height="match_parent">
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvProfilePosts"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:padding="4dp"
+            android:clipToPadding="false"/>
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
 </LinearLayout>

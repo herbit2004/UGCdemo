@@ -20,4 +20,12 @@ public interface CommentDao {
     
     @Query("DELETE FROM comments WHERE comment_id = :commentId")
     void deleteById(long commentId);
+
+    @Transaction
+    @Query("SELECT * FROM comments WHERE post_id = :postId AND (parent_comment_id IS NULL OR parent_comment_id = 0) ORDER BY comment_time ASC LIMIT :limit OFFSET :offset")
+    List<CommentWithUser> getTopLevelCommentsForPostPaged(long postId, int limit, int offset);
+
+    @Transaction
+    @Query("SELECT * FROM comments WHERE parent_comment_id = :parentId ORDER BY comment_time ASC")
+    List<CommentWithUser> getRepliesForParent(long parentId);
 }

@@ -18,7 +18,15 @@ public class ProfileViewModel extends AndroidViewModel {
     private PostDao postDao;
     private FollowDao followDao;
     
-    private MutableLiveData<Integer> currentTab = new MutableLiveData<>(0); // 0: My Posts, 1: Liked Posts
+    private MutableLiveData<Integer> currentTab = new MutableLiveData<>(0);
+    private long userId = -1;
+    private MutableLiveData<java.util.List<com.bytecamp.herbit.ugcdemo.data.model.PostCardItem>> posts = new MutableLiveData<>();
+    private int pageSize = 20;
+    private int offsetMy = 0;
+    private int offsetLiked = 0;
+    private boolean hasMoreMy = true;
+    private boolean hasMoreLiked = true;
+    private boolean loading = false;
 
     public ProfileViewModel(Application application) {
         super(application);
@@ -26,24 +34,81 @@ public class ProfileViewModel extends AndroidViewModel {
         userDao = db.userDao();
         postDao = db.postDao();
         followDao = db.followDao();
+        currentTab.observeForever(tab -> refresh());
     }
 
     public LiveData<User> getUser(long userId) {
         return userDao.getUserById(userId);
     }
 
-    public LiveData<List<PostCardItem>> getUserPosts(long userId) {
-        return Transformations.switchMap(currentTab, tab -> {
-            if (tab == 1) {
-                return postDao.getLikedPostCards(userId);
-            } else {
-                return postDao.getUserPostCards(userId);
-            }
-        });
+    public LiveData<java.util.List<com.bytecamp.herbit.ugcdemo.data.model.PostCardItem>> getPosts() {
+        return posts;
+    }
+    
+    public void setUserId(long userId) {
+        this.userId = userId;
+        refresh();
     }
     
     public void setTab(int tab) {
         currentTab.setValue(tab);
+    }
+    
+    public int getCurrentTab() {
+        Integer v = currentTab.getValue();
+        return v == null ? 0 : v;
+    }
+    
+    public void refresh() {
+        if (userId == -1) return;
+        if (getCurrentTab() == 1) {
+            offsetLiked = 0;
+            hasMoreLiked = true;
+        } else {
+            offsetMy = 0;
+            hasMoreMy = true;
+        }
+        posts.postValue(new java.util.ArrayList<>());
+        loadMore();
+    }
+    
+    public void loadMore() {
+        if (loading) return;
+        if (userId == -1) return;
+        int tab = getCurrentTab();
+        boolean hasMore = tab == 1 ? hasMoreLiked : hasMoreMy;
+        if (!hasMore) return;
+        loading = true;
+        AppDatabase.databaseWriteExecutor.execute(() -> {
+            java.util.List<com.bytecamp.herbit.ugcdemo.data.model.PostCardItem> page;
+            if (tab == 1) {
+                page = postDao.getLikedPostCardsPaged(userId, pageSize, offsetLiked);
+            } else {
+                page = postDao.getUserPostCardsPaged(userId, pageSize, offsetMy);
+            }
+            try { Thread.sleep(700); } catch (InterruptedException ignored) {}
+            java.util.List<com.bytecamp.herbit.ugcdemo.data.model.PostCardItem> current = posts.getValue();
+            if (current == null) current = new java.util.ArrayList<>();
+            java.util.ArrayList<com.bytecamp.herbit.ugcdemo.data.model.PostCardItem> merged = new java.util.ArrayList<>(current);
+            merged.addAll(page);
+            if (tab == 1) {
+                offsetLiked += page.size();
+                hasMoreLiked = page.size() == pageSize;
+            } else {
+                offsetMy += page.size();
+                hasMoreMy = page.size() == pageSize;
+            }
+            loading = false;
+            posts.postValue(merged);
+        });
+    }
+    
+    public boolean hasMore() {
+        return getCurrentTab() == 1 ? hasMoreLiked : hasMoreMy;
+    }
+    
+    public boolean isLoading() {
+        return loading;
     }
     
     public LiveData<Integer> getFollowingCount(long userId) {

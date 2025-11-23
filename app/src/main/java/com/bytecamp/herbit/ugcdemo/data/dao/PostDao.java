@@ -96,6 +96,55 @@ public interface PostDao {
            "WHERE follows.follower_id = :currentUserId " +
            "ORDER BY lastCommentTime DESC")
     LiveData<List<PostCardItem>> getFollowedPostCardsRecentComment(long currentUserId);
+
+    @Transaction
+    @Query("SELECT posts.*, " +
+           "(SELECT COUNT(*) FROM likes WHERE target_type = 0 AND target_id = posts.post_id) as likeCount, " +
+           "(SELECT COUNT(*) FROM comments WHERE post_id = posts.post_id) as commentCount " +
+           "FROM posts ORDER BY publish_time DESC LIMIT :limit OFFSET :offset")
+    List<PostCardItem> getAllPostCardsPaged(int limit, int offset);
+
+    @Transaction
+    @Query("SELECT posts.*, " +
+           "(SELECT COUNT(*) FROM likes WHERE target_type = 0 AND target_id = posts.post_id) as likeCount, " +
+           "(SELECT COUNT(*) FROM comments WHERE post_id = posts.post_id) as commentCount " +
+           "FROM posts ORDER BY likeCount DESC, commentCount DESC LIMIT :limit OFFSET :offset")
+    List<PostCardItem> getAllPostCardsPopularPaged(int limit, int offset);
+
+    @Transaction
+    @RewriteQueriesToDropUnusedColumns
+    @Query("SELECT posts.*, " +
+           "(SELECT COUNT(*) FROM likes WHERE target_type = 0 AND target_id = posts.post_id) as likeCount, " +
+           "(SELECT COUNT(*) FROM comments WHERE post_id = posts.post_id) as commentCount, " +
+           "(SELECT MAX(comment_time) FROM comments WHERE post_id = posts.post_id) as lastCommentTime " +
+           "FROM posts ORDER BY lastCommentTime DESC, publish_time DESC LIMIT :limit OFFSET :offset")
+    List<PostCardItem> getAllPostCardsRecentCommentPaged(int limit, int offset);
+
+    @Transaction
+    @Query("SELECT posts.*, " +
+           "(SELECT COUNT(*) FROM likes WHERE target_type = 0 AND target_id = posts.post_id) as likeCount, " +
+           "(SELECT COUNT(*) FROM comments WHERE post_id = posts.post_id) as commentCount " +
+           "FROM posts INNER JOIN follows ON posts.author_id = follows.followee_id WHERE follows.follower_id = :currentUserId " +
+           "ORDER BY publish_time DESC LIMIT :limit OFFSET :offset")
+    List<PostCardItem> getFollowedPostCardsPaged(long currentUserId, int limit, int offset);
+
+    @Transaction
+    @Query("SELECT posts.*, " +
+           "(SELECT COUNT(*) FROM likes WHERE target_type = 0 AND target_id = posts.post_id) as likeCount, " +
+           "(SELECT COUNT(*) FROM comments WHERE post_id = posts.post_id) as commentCount " +
+           "FROM posts INNER JOIN follows ON posts.author_id = follows.followee_id WHERE follows.follower_id = :currentUserId " +
+           "ORDER BY likeCount DESC LIMIT :limit OFFSET :offset")
+    List<PostCardItem> getFollowedPostCardsPopularPaged(long currentUserId, int limit, int offset);
+
+    @Transaction
+    @RewriteQueriesToDropUnusedColumns
+    @Query("SELECT posts.*, " +
+           "(SELECT COUNT(*) FROM likes WHERE target_type = 0 AND target_id = posts.post_id) as likeCount, " +
+           "(SELECT COUNT(*) FROM comments WHERE post_id = posts.post_id) as commentCount, " +
+           "(SELECT MAX(comment_time) FROM comments WHERE post_id = posts.post_id) as lastCommentTime " +
+           "FROM posts INNER JOIN follows ON posts.author_id = follows.followee_id WHERE follows.follower_id = :currentUserId " +
+           "ORDER BY lastCommentTime DESC LIMIT :limit OFFSET :offset")
+    List<PostCardItem> getFollowedPostCardsRecentCommentPaged(long currentUserId, int limit, int offset);
     
     /**
      * 获取指定用户的所有帖子，包含统计信息。
@@ -119,6 +168,20 @@ public interface PostDao {
            "WHERE likes.user_id = :userId AND likes.target_type = 0 " +
            "ORDER BY likes.create_time DESC")
     LiveData<List<PostCardItem>> getLikedPostCards(long userId);
+
+    @Transaction
+    @Query("SELECT posts.*, " +
+           "(SELECT COUNT(*) FROM likes WHERE target_type = 0 AND target_id = posts.post_id) as likeCount, " +
+           "(SELECT COUNT(*) FROM comments WHERE post_id = posts.post_id) as commentCount " +
+           "FROM posts WHERE author_id = :userId ORDER BY publish_time DESC LIMIT :limit OFFSET :offset")
+    List<PostCardItem> getUserPostCardsPaged(long userId, int limit, int offset);
+
+    @Transaction
+    @Query("SELECT posts.*, " +
+           "(SELECT COUNT(*) FROM likes WHERE target_type = 0 AND target_id = posts.post_id) as likeCount, " +
+           "(SELECT COUNT(*) FROM comments WHERE post_id = posts.post_id) as commentCount " +
+           "FROM posts INNER JOIN likes ON posts.post_id = likes.target_id WHERE likes.user_id = :userId AND likes.target_type = 0 ORDER BY likes.create_time DESC LIMIT :limit OFFSET :offset")
+    List<PostCardItem> getLikedPostCardsPaged(long userId, int limit, int offset);
 
     /**
      * 搜索帖子 (标题或内容包含关键词)。
@@ -158,6 +221,29 @@ public interface PostDao {
             "WHERE title LIKE '%' || :keyword || '%' OR content LIKE '%' || :keyword || '%' " +
             "ORDER BY lastCommentTime DESC")
     LiveData<List<PostCardItem>> searchPostCardsRecentComment(String keyword);
+
+    @Transaction
+    @Query("SELECT posts.*, " +
+           "(SELECT COUNT(*) FROM likes WHERE target_type = 0 AND target_id = posts.post_id) as likeCount, " +
+           "(SELECT COUNT(*) FROM comments WHERE post_id = posts.post_id) as commentCount " +
+           "FROM posts WHERE title LIKE '%' || :keyword || '%' OR content LIKE '%' || :keyword || '%' ORDER BY publish_time DESC LIMIT :limit OFFSET :offset")
+    List<PostCardItem> searchPostCardsPaged(String keyword, int limit, int offset);
+
+    @Transaction
+    @Query("SELECT posts.*, " +
+           "(SELECT COUNT(*) FROM likes WHERE target_type = 0 AND target_id = posts.post_id) as likeCount, " +
+           "(SELECT COUNT(*) FROM comments WHERE post_id = posts.post_id) as commentCount " +
+           "FROM posts WHERE title LIKE '%' || :keyword || '%' OR content LIKE '%' || :keyword || '%' ORDER BY likeCount DESC LIMIT :limit OFFSET :offset")
+    List<PostCardItem> searchPostCardsPopularPaged(String keyword, int limit, int offset);
+
+    @Transaction
+    @RewriteQueriesToDropUnusedColumns
+    @Query("SELECT posts.*, " +
+           "(SELECT COUNT(*) FROM likes WHERE target_type = 0 AND target_id = posts.post_id) as likeCount, " +
+           "(SELECT COUNT(*) FROM comments WHERE post_id = posts.post_id) as commentCount, " +
+           "(SELECT MAX(comment_time) FROM comments WHERE post_id = posts.post_id) as lastCommentTime " +
+           "FROM posts WHERE title LIKE '%' || :keyword || '%' OR content LIKE '%' || :keyword || '%' ORDER BY lastCommentTime DESC LIMIT :limit OFFSET :offset")
+    List<PostCardItem> searchPostCardsRecentCommentPaged(String keyword, int limit, int offset);
 
     /**
      * 获取单条帖子的详细信息（包含作者信息）。

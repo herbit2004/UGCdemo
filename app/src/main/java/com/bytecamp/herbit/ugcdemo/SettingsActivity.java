@@ -82,6 +82,16 @@ public class SettingsActivity extends AppCompatActivity {
         View swatchCyan = findViewById(R.id.swatchCyan);
         View swatchLime = findViewById(R.id.swatchLime);
         View swatchTeal = findViewById(R.id.swatchTeal);
+        View indicatorRed = findViewById(R.id.indicatorRed);
+        View indicatorBlue = findViewById(R.id.indicatorBlue);
+        View indicatorGreen = findViewById(R.id.indicatorGreen);
+        View indicatorOrange = findViewById(R.id.indicatorOrange);
+        View indicatorPink = findViewById(R.id.indicatorPink);
+        View indicatorAmber = findViewById(R.id.indicatorAmber);
+        View indicatorIndigo = findViewById(R.id.indicatorIndigo);
+        View indicatorCyan = findViewById(R.id.indicatorCyan);
+        View indicatorLime = findViewById(R.id.indicatorLime);
+        View indicatorTeal = findViewById(R.id.indicatorTeal);
 
         if (userId != -1) {
             profileViewModel.getUser(userId).observe(this, user -> {
@@ -136,6 +146,24 @@ public class SettingsActivity extends AppCompatActivity {
         swatchCyan.setOnClickListener(themeClick);
         swatchLime.setOnClickListener(themeClick);
         swatchTeal.setOnClickListener(themeClick);
+        highlightSelectedIndicator(ThemeUtils.getSelectedThemeRes(this), indicatorRed, indicatorBlue, indicatorGreen, indicatorOrange, indicatorPink, indicatorAmber, indicatorIndigo, indicatorCyan, indicatorLime, indicatorTeal);
+    }
+
+    private void highlightSelectedIndicator(int themeRes,
+            View indicatorRed, View indicatorBlue, View indicatorGreen, View indicatorOrange, View indicatorPink,
+            View indicatorAmber, View indicatorIndigo, View indicatorCyan, View indicatorLime, View indicatorTeal) {
+        View[] arr = new View[]{indicatorRed, indicatorBlue, indicatorGreen, indicatorOrange, indicatorPink, indicatorAmber, indicatorIndigo, indicatorCyan, indicatorLime, indicatorTeal};
+        for (View v : arr) { if (v != null) v.setVisibility(View.GONE); }
+        if (themeRes == R.style.Theme_UGCdemo_AccentRed) { if (indicatorRed != null) indicatorRed.setVisibility(View.VISIBLE); return; }
+        if (themeRes == R.style.Theme_UGCdemo_AccentBlue) { if (indicatorBlue != null) indicatorBlue.setVisibility(View.VISIBLE); return; }
+        if (themeRes == R.style.Theme_UGCdemo_AccentGreen) { if (indicatorGreen != null) indicatorGreen.setVisibility(View.VISIBLE); return; }
+        if (themeRes == R.style.Theme_UGCdemo_AccentOrange) { if (indicatorOrange != null) indicatorOrange.setVisibility(View.VISIBLE); return; }
+        if (themeRes == R.style.Theme_UGCdemo_AccentPink) { if (indicatorPink != null) indicatorPink.setVisibility(View.VISIBLE); return; }
+        if (themeRes == R.style.Theme_UGCdemo_AccentAmber) { if (indicatorAmber != null) indicatorAmber.setVisibility(View.VISIBLE); return; }
+        if (themeRes == R.style.Theme_UGCdemo_AccentIndigo) { if (indicatorIndigo != null) indicatorIndigo.setVisibility(View.VISIBLE); return; }
+        if (themeRes == R.style.Theme_UGCdemo_AccentCyan) { if (indicatorCyan != null) indicatorCyan.setVisibility(View.VISIBLE); return; }
+        if (themeRes == R.style.Theme_UGCdemo_AccentLime) { if (indicatorLime != null) indicatorLime.setVisibility(View.VISIBLE); return; }
+        if (themeRes == R.style.Theme_UGCdemo_AccentTeal) { if (indicatorTeal != null) indicatorTeal.setVisibility(View.VISIBLE); }
     }
 
     private void showChangePasswordDialog() {

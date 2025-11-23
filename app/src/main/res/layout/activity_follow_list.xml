@@ -29,7 +29,6 @@
             android:text="列表"
             android:textSize="18sp"
             android:textStyle="bold"
-            android:textColor="@color/gray_900"
             android:layout_centerInParent="true"/>
 
     </RelativeLayout>

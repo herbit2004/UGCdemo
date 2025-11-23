@@ -15,15 +15,19 @@ import android.content.SharedPreferences;
 public class HomeViewModel extends AndroidViewModel {
     private PostDao postDao;
 
-    // 0: All, 1: Follow
     private MutableLiveData<Integer> currentTab = new MutableLiveData<>(0);
-    
-    // 0: Recent Publish, 1: Popular, 2: Recent Comment
     private MutableLiveData<Integer> currentSort = new MutableLiveData<>(0);
-    
     private long currentUserId = -1;
 
-    private LiveData<List<PostCardItem>> posts;
+    private MutableLiveData<List<PostCardItem>> postsHome = new MutableLiveData<>();
+    private MutableLiveData<List<PostCardItem>> postsFollow = new MutableLiveData<>();
+    private int pageSize = 20;
+    private int offsetHome = 0;
+    private int offsetFollow = 0;
+    private boolean hasMoreHome = true;
+    private boolean hasMoreFollow = true;
+    private boolean loadingHome = false;
+    private boolean loadingFollow = false;
 
     public HomeViewModel(Application application) {
         super(application);
@@ -31,47 +35,7 @@ public class HomeViewModel extends AndroidViewModel {
         postDao = db.postDao();
         loadCurrentUserId();
 
-        // Combine Tab and Sort changes to refresh posts
-        CombinedFilter filter = new CombinedFilter(0, 0);
-        MutableLiveData<CombinedFilter> filterLiveData = new MutableLiveData<>(filter);
-
-        // Helper to update filter
-        currentTab.observeForever(tab -> {
-            CombinedFilter f = filterLiveData.getValue();
-            if (f != null) {
-                f.tab = tab;
-                filterLiveData.setValue(f);
-            }
-        });
-
-        currentSort.observeForever(sort -> {
-            CombinedFilter f = filterLiveData.getValue();
-            if (f != null) {
-                f.sort = sort;
-                filterLiveData.setValue(f);
-            }
-        });
-
-        posts = Transformations.switchMap(filterLiveData, input -> {
-            if (input.tab == 1) {
-                // Follow tab - only show followed user's posts
-                // Sorting for followed posts
-                switch (input.sort) {
-                    case 1: return postDao.getFollowedPostCardsPopular(currentUserId);
-                    case 2: return postDao.getFollowedPostCardsRecentComment(currentUserId);
-                    case 0:
-                    default: return postDao.getFollowedPostCards(currentUserId);
-                }
-            } else {
-                // All posts tab
-                switch (input.sort) {
-                    case 1: return postDao.getAllPostCardsPopular();
-                    case 2: return postDao.getAllPostCardsRecentComment();
-                    case 0:
-                    default: return postDao.getAllPostCards();
-                }
-            }
-        });
+        currentSort.observeForever(sort -> refresh());
     }
     
     private void loadCurrentUserId() {
@@ -79,9 +43,8 @@ public class HomeViewModel extends AndroidViewModel {
         currentUserId = sp.getLong("user_id", -1);
     }
 
-    public LiveData<List<PostCardItem>> getPosts() {
-        return posts;
-    }
+    public LiveData<List<PostCardItem>> getHomePosts() { return postsHome; }
+    public LiveData<List<PostCardItem>> getFollowPosts() { return postsFollow; }
 
     public void setTab(int tabIndex) {
         currentTab.setValue(tabIndex);
@@ -108,12 +71,74 @@ public class HomeViewModel extends AndroidViewModel {
         return currentSort;
     }
 
-    private static class CombinedFilter {
-        int tab;
-        int sort;
-        CombinedFilter(int tab, int sort) {
-            this.tab = tab;
-            this.sort = sort;
+    public void refresh() { refresh(getCurrentTab()); }
+    public void refresh(int tab) {
+        if (tab == 1) {
+            offsetFollow = 0;
+            hasMoreFollow = true;
+            postsFollow.postValue(new java.util.ArrayList<>());
+        } else {
+            offsetHome = 0;
+            hasMoreHome = true;
+            postsHome.postValue(new java.util.ArrayList<>());
         }
+        loadMore(tab);
     }
+
+    public void loadMore() { loadMore(getCurrentTab()); }
+    public void loadMore(int tab) {
+        if (tab == 1) {
+            if (loadingFollow || !hasMoreFollow) return;
+            loadingFollow = true;
+        } else {
+            if (loadingHome || !hasMoreHome) return;
+            loadingHome = true;
+        }
+        AppDatabase.databaseWriteExecutor.execute(() -> {
+            int sort = getCurrentSort();
+            List<PostCardItem> page;
+            if (tab == 1) {
+                int offset = offsetFollow;
+                switch (sort) {
+                    case 1: page = postDao.getFollowedPostCardsPopularPaged(currentUserId, pageSize, offset); break;
+                    case 2: page = postDao.getFollowedPostCardsRecentCommentPaged(currentUserId, pageSize, offset); break;
+                    case 0:
+                    default: page = postDao.getFollowedPostCardsPaged(currentUserId, pageSize, offset); break;
+                }
+            } else {
+                int offset = offsetHome;
+                switch (sort) {
+                    case 1: page = postDao.getAllPostCardsPopularPaged(pageSize, offset); break;
+                    case 2: page = postDao.getAllPostCardsRecentCommentPaged(pageSize, offset); break;
+                    case 0:
+                    default: page = postDao.getAllPostCardsPaged(pageSize, offset); break;
+                }
+            }
+            try { Thread.sleep(700); } catch (InterruptedException ignored) {}
+            if (tab == 1) {
+                List<PostCardItem> current = postsFollow.getValue();
+                if (current == null) current = new java.util.ArrayList<>();
+                java.util.ArrayList<PostCardItem> merged = new java.util.ArrayList<>(current);
+                merged.addAll(page);
+                offsetFollow += page.size();
+                hasMoreFollow = page.size() == pageSize;
+                loadingFollow = false;
+                postsFollow.postValue(merged);
+            } else {
+                List<PostCardItem> current = postsHome.getValue();
+                if (current == null) current = new java.util.ArrayList<>();
+                java.util.ArrayList<PostCardItem> merged = new java.util.ArrayList<>(current);
+                merged.addAll(page);
+                offsetHome += page.size();
+                hasMoreHome = page.size() == pageSize;
+                loadingHome = false;
+                postsHome.postValue(merged);
+            }
+        });
+    }
+
+    public boolean hasMore() { return hasMore(getCurrentTab()); }
+    public boolean hasMore(int tab) { return tab == 1 ? hasMoreFollow : hasMoreHome; }
+    public boolean isLoading() { return isLoading(getCurrentTab()); }
+    public boolean isLoading(int tab) { return tab == 1 ? loadingFollow : loadingHome; }
 }

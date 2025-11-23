@@ -30,4 +30,10 @@ public class FollowListViewModel extends AndroidViewModel {
             followDao.deleteFollow(followerId, followeeId);
         });
     }
+    
+    public void follow(long followerId, long followeeId) {
+        AppDatabase.databaseWriteExecutor.execute(() -> {
+            followDao.insertFollow(new com.bytecamp.herbit.ugcdemo.data.entity.Follow(followerId, followeeId, System.currentTimeMillis()));
+        });
+    }
 }

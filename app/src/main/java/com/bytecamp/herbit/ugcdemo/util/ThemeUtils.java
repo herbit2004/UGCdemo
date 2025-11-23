@@ -15,7 +15,7 @@ public class ThemeUtils {
 
     public static int getSelectedThemeRes(Context context) {
         SharedPreferences prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
-        return prefs.getInt(KEY_THEME_RES, R.style.Theme_UGCdemo);
+        return prefs.getInt(KEY_THEME_RES, R.style.Theme_UGCdemo_AccentRed);
     }
 
     public static void setSelectedThemeRes(Context context, int themeResId) {

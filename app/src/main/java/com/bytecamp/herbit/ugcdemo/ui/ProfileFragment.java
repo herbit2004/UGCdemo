@@ -39,6 +39,7 @@ public class ProfileFragment extends Fragment {
     
     private TextView tvPostCount, tvFollowCount, tvFanCount;
     private TabLayout tabLayout;
+    private androidx.swiperefreshlayout.widget.SwipeRefreshLayout swipeRefresh;
 
     
 
@@ -50,6 +51,7 @@ public class ProfileFragment extends Fragment {
         ivAvatar = root.findViewById(R.id.ivProfileAvatar);
         tvUsername = root.findViewById(R.id.tvProfileName);
         recyclerView = root.findViewById(R.id.rvProfilePosts);
+        swipeRefresh = root.findViewById(R.id.swipeRefresh);
         ImageView ivSettings = root.findViewById(R.id.ivSettings);
         
         tvPostCount = root.findViewById(R.id.tvPostCount);
@@ -68,6 +70,7 @@ public class ProfileFragment extends Fragment {
 
         // ViewModel
         profileViewModel = new ViewModelProvider(this).get(ProfileViewModel.class);
+        profileViewModel.setUserId(userId);
         
         if (userId != -1) {
             profileViewModel.getUser(userId).observe(getViewLifecycleOwner(), user -> {
@@ -81,15 +84,13 @@ public class ProfileFragment extends Fragment {
                 }
             });
 
-            profileViewModel.getUserPosts(userId).observe(getViewLifecycleOwner(), posts -> {
+            profileViewModel.getPosts().observe(getViewLifecycleOwner(), posts -> {
                 adapter.setPosts(posts);
-                if (profileViewModel.getUserPosts(userId) != null && tabLayout.getSelectedTabPosition() == 0) {
-                    // A bit tricky to update count only for "My Posts" tab from here without more logic,
-                    // but we can just update if current tab is 0 or rely on list size
-                    if (tabLayout.getSelectedTabPosition() == 0) {
-                        tvPostCount.setText(String.valueOf(posts.size()));
-                    }
+                if (tabLayout.getSelectedTabPosition() == 0) {
+                    tvPostCount.setText(String.valueOf(posts != null ? posts.size() : 0));
                 }
+                adapter.setLoading(false);
+                adapter.setHasMore(profileViewModel.hasMore());
             });
             
             profileViewModel.getFollowingCount(userId).observe(getViewLifecycleOwner(), count -> tvFollowCount.setText(String.valueOf(count)));
@@ -108,10 +109,7 @@ public class ProfileFragment extends Fragment {
             @Override
             public void onTabSelected(TabLayout.Tab tab) {
                 profileViewModel.setTab(tab.getPosition());
-                if (tab.getPosition() == 0) {
-                    // Re-fetch or observe already does it? 
-                    // The switchMap in VM will handle data source change
-                }
+                profileViewModel.refresh();
             }
             @Override public void onTabUnselected(TabLayout.Tab tab) {}
             @Override public void onTabReselected(TabLayout.Tab tab) {}
@@ -139,6 +137,38 @@ public class ProfileFragment extends Fragment {
         
         // Bind listeners to container
         root.findViewById(R.id.llFanContainer).setOnClickListener(fanListener);
+        
+        swipeRefresh.setOnRefreshListener(() -> {
+            swipeRefresh.setRefreshing(false);
+            profileViewModel.refresh();
+        });
+        
+        recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener(){
+            private boolean loadingMore = false;
+            private long lastLoadTime = 0L;
+            @Override
+            public void onScrolled(@NonNull RecyclerView rv, int dx, int dy) {
+                if (dy > 0) {
+                    StaggeredGridLayoutManager lm = (StaggeredGridLayoutManager) rv.getLayoutManager();
+                    if (lm == null) return;
+                    int[] last = new int[2];
+                    lm.findLastVisibleItemPositions(last);
+                    int lastPos = Math.max(last[0], last[1]);
+                    RecyclerView.Adapter a = rv.getAdapter();
+                    if (a != null && lastPos >= Math.max(0, a.getItemCount() - 3)) {
+                        long now = System.currentTimeMillis();
+                        if (profileViewModel.hasMore() && now - lastLoadTime > 700) {
+                            loadingMore = true;
+                            if (a instanceof PostsAdapter) {
+                                ((PostsAdapter) a).setLoading(true);
+                            }
+                            profileViewModel.loadMore();
+                            lastLoadTime = now;
+                        }
+                    }
+                }
+            }
+        });
 
         return root;
     }

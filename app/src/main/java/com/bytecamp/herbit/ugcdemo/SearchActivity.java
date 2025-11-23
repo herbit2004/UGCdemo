@@ -10,6 +10,7 @@ import android.widget.ImageView;
 import android.widget.PopupMenu;
 import android.util.TypedValue;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.annotation.NonNull;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.StaggeredGridLayoutManager;
@@ -24,6 +25,7 @@ public class SearchActivity extends AppCompatActivity {
     private ImageView ivSort;
     private ImageView ivBack;
     private RecyclerView recyclerView;
+    private androidx.swiperefreshlayout.widget.SwipeRefreshLayout swipeRefresh;
     private PostsAdapter adapter;
 
     @Override
@@ -53,6 +55,7 @@ public class SearchActivity extends AppCompatActivity {
         ivSort = findViewById(R.id.ivSort);
         ivSort.setOnClickListener(this::showSortMenu);
 
+        swipeRefresh = findViewById(R.id.swipeRefresh);
         recyclerView = findViewById(R.id.recyclerView);
         StaggeredGridLayoutManager layoutManager = new StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL);
         layoutManager.setGapStrategy(StaggeredGridLayoutManager.GAP_HANDLING_NONE);
@@ -67,6 +70,36 @@ public class SearchActivity extends AppCompatActivity {
         
         viewModel.getSearchResults().observe(this, posts -> {
             adapter.setPosts(posts);
+            adapter.setLoading(false);
+            adapter.setHasMore(viewModel.hasMore());
+        });
+
+        swipeRefresh.setOnRefreshListener(() -> {
+            swipeRefresh.setRefreshing(false);
+            viewModel.refresh();
+        });
+
+        recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener(){
+            private long lastLoadTime = 0L;
+            @Override
+            public void onScrolled(@NonNull RecyclerView rv, int dx, int dy) {
+                if (dy > 0) {
+                    StaggeredGridLayoutManager lm = (StaggeredGridLayoutManager) rv.getLayoutManager();
+                    if (lm == null) return;
+                    int[] last = new int[2];
+                    lm.findLastVisibleItemPositions(last);
+                    int lastPos = Math.max(last[0], last[1]);
+                    RecyclerView.Adapter a = rv.getAdapter();
+                    if (a != null && lastPos >= Math.max(0, a.getItemCount() - 3)) {
+                        long now = System.currentTimeMillis();
+                        if (viewModel.hasMore() && now - lastLoadTime > 700) {
+                            adapter.setLoading(true);
+                            viewModel.loadMore();
+                            lastLoadTime = now;
+                        }
+                    }
+                }
+            }
         });
     }
 
@@ -74,6 +107,7 @@ public class SearchActivity extends AppCompatActivity {
         String query = etSearch.getText().toString().trim();
         if (!TextUtils.isEmpty(query)) {
             viewModel.search(query);
+            viewModel.refresh();
         }
     }
 

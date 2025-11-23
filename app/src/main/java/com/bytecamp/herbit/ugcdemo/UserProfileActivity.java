@@ -8,6 +8,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.annotation.NonNull;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.StaggeredGridLayoutManager;
@@ -31,6 +32,7 @@ public class UserProfileActivity extends AppCompatActivity {
     private RecyclerView recyclerView;
     private TabLayout tabLayout;
     private PostsAdapter adapter;
+    private androidx.swiperefreshlayout.widget.SwipeRefreshLayout swipeRefresh;
     
     private LinearLayout llFollowContainer, llFanContainer;
 
@@ -70,6 +72,7 @@ public class UserProfileActivity extends AppCompatActivity {
             btnFollow.setVisibility(View.GONE); // Should not happen if logic is correct
         }
 
+        swipeRefresh = findViewById(R.id.swipeRefresh);
         recyclerView = findViewById(R.id.rvProfilePosts);
         recyclerView.setLayoutManager(new StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL));
         adapter = new PostsAdapter();
@@ -83,6 +86,35 @@ public class UserProfileActivity extends AppCompatActivity {
             }
             @Override public void onTabUnselected(TabLayout.Tab tab) {}
             @Override public void onTabReselected(TabLayout.Tab tab) {}
+        });
+        swipeRefresh.setOnRefreshListener(() -> {
+            swipeRefresh.setRefreshing(false);
+            viewModel.refresh();
+        });
+
+        recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener(){
+            private long lastLoadTime = 0L;
+            @Override
+            public void onScrolled(@NonNull RecyclerView rv, int dx, int dy) {
+                if (dy > 0) {
+                    StaggeredGridLayoutManager lm = (StaggeredGridLayoutManager) rv.getLayoutManager();
+                    if (lm == null) return;
+                    int[] last = new int[2];
+                    lm.findLastVisibleItemPositions(last);
+                    int lastPos = Math.max(last[0], last[1]);
+                    RecyclerView.Adapter a = rv.getAdapter();
+                    if (a != null && lastPos >= Math.max(0, a.getItemCount() - 3)) {
+                        long now = System.currentTimeMillis();
+                        if (viewModel.hasMore() && now - lastLoadTime > 700) {
+                            if (a instanceof com.bytecamp.herbit.ugcdemo.ui.PostsAdapter) {
+                                ((com.bytecamp.herbit.ugcdemo.ui.PostsAdapter)a).setLoading(true);
+                            }
+                            viewModel.loadMore();
+                            lastLoadTime = now;
+                        }
+                    }
+                }
+            }
         });
         
         // Click listeners for lists
@@ -117,12 +149,15 @@ public class UserProfileActivity extends AppCompatActivity {
             }
         });
         
-        viewModel.getPosts(userId).observe(this, posts -> {
+        viewModel.getPosts().observe(this, posts -> {
             adapter.setPosts(posts);
             if (viewModel.getCurrentTab() == 0) {
                 tvPostCount.setText(String.valueOf(posts.size()));
             }
+            adapter.setLoading(false);
+            adapter.setHasMore(viewModel.hasMore());
         });
+        viewModel.init(userId);
         
         viewModel.getFollowingCount(userId).observe(this, count -> tvFollowCount.setText(String.valueOf(count)));
         viewModel.getFollowerCount(userId).observe(this, count -> tvFanCount.setText(String.valueOf(count)));
