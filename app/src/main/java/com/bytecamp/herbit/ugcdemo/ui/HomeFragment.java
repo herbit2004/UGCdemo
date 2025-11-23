@@ -21,6 +21,7 @@ import androidx.viewpager2.adapter.FragmentStateAdapter;
 import androidx.annotation.Nullable;
 import com.bytecamp.herbit.ugcdemo.R;
 import com.bytecamp.herbit.ugcdemo.SearchActivity;
+import com.bytecamp.herbit.ugcdemo.PublishActivity;
 import com.bytecamp.herbit.ugcdemo.viewmodel.HomeViewModel;
 import android.util.TypedValue;
 
@@ -59,6 +60,12 @@ public class HomeFragment extends Fragment {
         
         adapterHome = new PostsAdapter();
         adapterFollow = new PostsAdapter();
+
+        adapterHome.setEmptyStateText("暂时没有内容，去发布试试");
+        adapterHome.setOnEmptyActionListener(() -> {
+            startActivity(new Intent(getActivity(), PublishActivity.class));
+        });
+        adapterFollow.setEmptyStateText("暂无关注内容，去关注一些作者吧");
 
         viewPager.setAdapter(new PagerAdapter(this));
         viewPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback(){

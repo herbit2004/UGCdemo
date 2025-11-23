@@ -62,6 +62,7 @@ public class SearchActivity extends AppCompatActivity {
         recyclerView.setLayoutManager(layoutManager);
         
         adapter = new PostsAdapter();
+        adapter.setEmptyStateText("未找到结果，试试换个关键词");
         recyclerView.setAdapter(adapter);
     }
 

@@ -25,6 +25,7 @@ import com.bumptech.glide.Glide;
 import com.bytecamp.herbit.ugcdemo.AuthActivity;
 import com.bytecamp.herbit.ugcdemo.FollowListActivity;
 import com.bytecamp.herbit.ugcdemo.R;
+import com.bytecamp.herbit.ugcdemo.PublishActivity;
 import com.bytecamp.herbit.ugcdemo.viewmodel.ProfileViewModel;
 import com.google.android.material.tabs.TabLayout;
 
@@ -62,6 +63,10 @@ public class ProfileFragment extends Fragment {
         // Setup RecyclerView
         recyclerView.setLayoutManager(new StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL));
         adapter = new PostsAdapter();
+        adapter.setEmptyStateText("你还没有发布内容，去发布试试");
+        adapter.setOnEmptyActionListener(() -> {
+            startActivity(new Intent(getActivity(), PublishActivity.class));
+        });
         recyclerView.setAdapter(adapter);
 
         // Get User ID
@@ -110,6 +115,13 @@ public class ProfileFragment extends Fragment {
             public void onTabSelected(TabLayout.Tab tab) {
                 profileViewModel.setTab(tab.getPosition());
                 profileViewModel.refresh();
+                if (tab.getPosition() == 0) {
+                    adapter.setEmptyStateText("你还没有发布内容，去发布试试");
+                    adapter.setOnEmptyActionListener(() -> startActivity(new Intent(getActivity(), PublishActivity.class)));
+                } else {
+                    adapter.setEmptyStateText("你还没有点赞任何内容");
+                    adapter.setOnEmptyActionListener(null);
+                }
             }
             @Override public void onTabUnselected(TabLayout.Tab tab) {}
             @Override public void onTabReselected(TabLayout.Tab tab) {}

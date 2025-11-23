@@ -76,6 +76,7 @@ public class UserProfileActivity extends AppCompatActivity {
         recyclerView = findViewById(R.id.rvProfilePosts);
         recyclerView.setLayoutManager(new StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL));
         adapter = new PostsAdapter();
+        adapter.setEmptyStateText("TA 还没有发布内容");
         recyclerView.setAdapter(adapter);
 
         tabLayout = findViewById(R.id.tabLayout);
@@ -83,6 +84,11 @@ public class UserProfileActivity extends AppCompatActivity {
             @Override
             public void onTabSelected(TabLayout.Tab tab) {
                 viewModel.setTab(tab.getPosition());
+                if (tab.getPosition() == 0) {
+                    adapter.setEmptyStateText("TA 还没有发布内容");
+                } else {
+                    adapter.setEmptyStateText("TA 暂未点赞任何内容");
+                }
             }
             @Override public void onTabUnselected(TabLayout.Tab tab) {}
             @Override public void onTabReselected(TabLayout.Tab tab) {}

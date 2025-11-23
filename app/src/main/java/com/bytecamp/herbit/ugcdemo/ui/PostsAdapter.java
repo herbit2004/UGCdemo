@@ -32,6 +32,8 @@ public class PostsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
     private static final int VIEW_FOOTER = 1;
     private boolean loading = false;
     private boolean hasMore = true;
+    private String emptyText = "暂无内容";
+    private OnEmptyActionListener emptyActionListener;
 
     /**
      * 更新帖子列表数据
@@ -51,6 +53,10 @@ public class PostsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
         this.hasMore = hasMore;
         notifyItemChanged(getItemCount() - 1);
     }
+
+    public interface OnEmptyActionListener { void onEmptyClick(); }
+    public void setEmptyStateText(String text) { this.emptyText = text != null ? text : ""; notifyItemChanged(getItemCount() - 1); }
+    public void setOnEmptyActionListener(OnEmptyActionListener l) { this.emptyActionListener = l; }
 
     @NonNull
     @Override
@@ -73,11 +79,23 @@ public class PostsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
             if (loading) {
                 fh.tvFooter.setText("正在加载...");
                 fh.tvFooter.setVisibility(View.VISIBLE);
-            } else if (!hasMore && posts.size() > 0) {
+                fh.tvFooter.setOnClickListener(null);
+            } else if (posts.size() == 0) {
+                fh.tvFooter.setText(emptyText);
+                fh.tvFooter.setVisibility(View.VISIBLE);
+                if (emptyActionListener != null) {
+                    fh.tvFooter.setClickable(true);
+                    fh.tvFooter.setOnClickListener(v -> emptyActionListener.onEmptyClick());
+                } else {
+                    fh.tvFooter.setOnClickListener(null);
+                }
+            } else if (!hasMore) {
                 fh.tvFooter.setText("没有更多了");
                 fh.tvFooter.setVisibility(View.VISIBLE);
+                fh.tvFooter.setOnClickListener(null);
             } else {
                 fh.tvFooter.setVisibility(View.GONE);
+                fh.tvFooter.setOnClickListener(null);
             }
         } else {
             PostViewHolder ph = (PostViewHolder) holder;
@@ -87,13 +105,13 @@ public class PostsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
 
     @Override
     public int getItemCount() {
-        boolean showFooter = loading || (!hasMore && posts.size() > 0);
+        boolean showFooter = loading || (!hasMore && posts.size() > 0) || posts.size() == 0;
         return posts.size() + (showFooter ? 1 : 0);
     }
 
     @Override
     public int getItemViewType(int position) {
-        boolean showFooter = loading || (!hasMore && posts.size() > 0);
+        boolean showFooter = loading || (!hasMore && posts.size() > 0) || posts.size() == 0;
         if (showFooter && position == getItemCount() - 1) return VIEW_FOOTER;
         return VIEW_POST;
     }
