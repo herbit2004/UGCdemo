@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="设置"
+            android:textSize="20sp"
+            android:textStyle="bold"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingTop="16dp">
+
+            <ImageView
+                android:id="@+id/ivSettingsAvatar"
+                android:layout_width="64dp"
+                android:layout_height="64dp"
+                android:src="@mipmap/ic_launcher_round"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:padding="4dp"/>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:layout_marginStart="16dp">
+
+                <TextView
+                    android:id="@+id/tvSettingsUsername"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="用户名"
+                    android:textStyle="bold"/>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <EditText
+                        android:id="@+id/etSettingsNickname"
+                        android:layout_width="0dp"
+                        android:layout_height="40dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_search_box"
+                        android:hint="输入新昵称"
+                        android:paddingHorizontal="12dp"/>
+
+                    <Button
+                        android:id="@+id/btnSaveNickname"
+                        android:layout_width="wrap_content"
+                        android:layout_height="40dp"
+                        android:text="保存"
+                        android:layout_marginStart="8dp"
+                        android:backgroundTint="?attr/colorSecondary"
+                        android:textColor="?attr/colorOnSecondary"/>
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+
+        
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#EEEEEE"
+            android:layout_marginTop="16dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="主题色"
+            android:textStyle="bold"
+            android:layout_marginTop="16dp"/>
+
+        <GridLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:columnCount="5"
+            android:rowCount="2"
+            android:layout_marginTop="8dp">
+
+            <View
+                android:id="@+id/swatchRed"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_columnWeight="1"
+                android:layout_margin="6dp"
+                android:background="@color/red_500"/>
+            <View
+                android:id="@+id/swatchBlue"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_columnWeight="1"
+                android:layout_margin="6dp"
+                android:background="@color/blue_500"/>
+            <View
+                android:id="@+id/swatchGreen"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_columnWeight="1"
+                android:layout_margin="6dp"
+                android:background="@color/green_500"/>
+            <View
+                android:id="@+id/swatchOrange"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_columnWeight="1"
+                android:layout_margin="6dp"
+                android:background="@color/orange_500"/>
+            <View
+                android:id="@+id/swatchPink"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_columnWeight="1"
+                android:layout_margin="6dp"
+                android:background="@color/pink_500"/>
+            <View
+                android:id="@+id/swatchAmber"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_columnWeight="1"
+                android:layout_margin="6dp"
+                android:background="@color/black"/>
+            <View
+                android:id="@+id/swatchIndigo"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_columnWeight="1"
+                android:layout_margin="6dp"
+                android:background="@color/indigo_500"/>
+            <View
+                android:id="@+id/swatchCyan"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_columnWeight="1"
+                android:layout_margin="6dp"
+                android:background="@color/gray_900"/>
+            <View
+                android:id="@+id/swatchLime"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_columnWeight="1"
+                android:layout_margin="6dp"
+                android:background="@color/brown_500"/>
+            <View
+                android:id="@+id/swatchTeal"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_columnWeight="1"
+                android:layout_margin="6dp"
+                android:background="@color/purple_500"/>
+        </GridLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#EEEEEE"
+            android:layout_marginTop="16dp"/>
+
+        <Button
+            android:id="@+id/btnChangePassword"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="修改密码"
+            android:layout_marginTop="16dp"
+            android:backgroundTint="?attr/colorSecondary"
+            android:textColor="?attr/colorOnSecondary"/>
+
+        <Button
+            android:id="@+id/btnDeleteAccount"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="注销账号"
+            android:layout_marginTop="8dp"
+            android:backgroundTint="?attr/colorSecondary"
+            android:textColor="?attr/colorOnSecondary"/>
+
+        <Button
+            android:id="@+id/btnLogout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="退出登录"
+            android:layout_marginTop="8dp"
+            android:backgroundTint="?attr/colorSecondary"
+            android:textColor="?attr/colorOnSecondary"/>
+
+    </LinearLayout>
+
+</ScrollView>
