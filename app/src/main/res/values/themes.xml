@@ -14,4 +14,55 @@
         <item name="android:navigationBarColor">@color/white</item>
         <item name="android:windowAnimationStyle">@style/AppWindowAnimation</item>
     </style>
+
+    <style name="Theme.UGCdemo.AccentRed" parent="Theme.UGCdemo">
+        <item name="colorSecondary">@color/red_500</item>
+        <item name="colorSecondaryVariant">@color/red_700</item>
+        <item name="colorOnSecondary">@color/white</item>
+    </style>
+    <style name="Theme.UGCdemo.AccentBlue" parent="Theme.UGCdemo">
+        <item name="colorSecondary">@color/blue_500</item>
+        <item name="colorSecondaryVariant">@color/blue_700</item>
+        <item name="colorOnSecondary">@color/white</item>
+    </style>
+    <style name="Theme.UGCdemo.AccentGreen" parent="Theme.UGCdemo">
+        <item name="colorSecondary">@color/green_500</item>
+        <item name="colorSecondaryVariant">@color/green_700</item>
+        <item name="colorOnSecondary">@color/white</item>
+    </style>
+    <style name="Theme.UGCdemo.AccentOrange" parent="Theme.UGCdemo">
+        <item name="colorSecondary">@color/orange_500</item>
+        <item name="colorSecondaryVariant">@color/orange_700</item>
+        <item name="colorOnSecondary">@color/white</item>
+    </style>
+    <style name="Theme.UGCdemo.AccentPink" parent="Theme.UGCdemo">
+        <item name="colorSecondary">@color/pink_500</item>
+        <item name="colorSecondaryVariant">@color/pink_700</item>
+        <item name="colorOnSecondary">@color/white</item>
+    </style>
+    <style name="Theme.UGCdemo.AccentAmber" parent="Theme.UGCdemo">
+        <item name="colorSecondary">@color/black</item>
+        <item name="colorSecondaryVariant">@color/gray_700</item>
+        <item name="colorOnSecondary">@color/white</item>
+    </style>
+    <style name="Theme.UGCdemo.AccentIndigo" parent="Theme.UGCdemo">
+        <item name="colorSecondary">@color/indigo_500</item>
+        <item name="colorSecondaryVariant">@color/indigo_700</item>
+        <item name="colorOnSecondary">@color/white</item>
+    </style>
+    <style name="Theme.UGCdemo.AccentCyan" parent="Theme.UGCdemo">
+        <item name="colorSecondary">@color/gray_900</item>
+        <item name="colorSecondaryVariant">@color/gray_700</item>
+        <item name="colorOnSecondary">@color/white</item>
+    </style>
+    <style name="Theme.UGCdemo.AccentLime" parent="Theme.UGCdemo">
+        <item name="colorSecondary">@color/brown_500</item>
+        <item name="colorSecondaryVariant">@color/brown_700</item>
+        <item name="colorOnSecondary">@color/white</item>
+    </style>
+    <style name="Theme.UGCdemo.AccentTeal" parent="Theme.UGCdemo">
+        <item name="colorSecondary">@color/purple_500</item>
+        <item name="colorSecondaryVariant">@color/purple_700</item>
+        <item name="colorOnSecondary">@color/white</item>
+    </style>
 </resources>

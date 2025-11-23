@@ -14,6 +14,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.StaggeredGridLayoutManager;
 import com.bytecamp.herbit.ugcdemo.ui.PostsAdapter;
 import com.bytecamp.herbit.ugcdemo.viewmodel.SearchViewModel;
+import com.bytecamp.herbit.ugcdemo.util.ThemeUtils;
 
 public class SearchActivity extends AppCompatActivity {
 
@@ -26,6 +27,7 @@ public class SearchActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        ThemeUtils.applyTheme(this);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_search);
 

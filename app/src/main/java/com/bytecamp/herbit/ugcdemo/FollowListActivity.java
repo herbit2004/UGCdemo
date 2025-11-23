@@ -9,6 +9,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import com.bytecamp.herbit.ugcdemo.ui.UserListAdapter;
 import com.bytecamp.herbit.ugcdemo.viewmodel.FollowListViewModel;
+import com.bytecamp.herbit.ugcdemo.util.ThemeUtils;
 
 public class FollowListActivity extends AppCompatActivity {
 
@@ -24,6 +25,7 @@ public class FollowListActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        ThemeUtils.applyTheme(this);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_follow_list);
 

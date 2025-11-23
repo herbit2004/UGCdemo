@@ -12,6 +12,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
 import com.bytecamp.herbit.ugcdemo.data.entity.User;
 import com.bytecamp.herbit.ugcdemo.viewmodel.AuthViewModel;
+import com.bytecamp.herbit.ugcdemo.util.ThemeUtils;
 
 public class AuthActivity extends AppCompatActivity {
     private AuthViewModel authViewModel;
@@ -22,6 +23,7 @@ public class AuthActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        ThemeUtils.applyTheme(this);
         super.onCreate(savedInstanceState);
 
         // Check if logged in

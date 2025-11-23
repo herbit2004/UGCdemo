@@ -6,11 +6,13 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.bytecamp.herbit.ugcdemo.ui.HomeFragment;
 import com.bytecamp.herbit.ugcdemo.ui.ProfileFragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.bytecamp.herbit.ugcdemo.util.ThemeUtils;
 
 public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        ThemeUtils.applyTheme(this);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
@@ -59,6 +61,9 @@ public class MainActivity extends AppCompatActivity {
         if (intent.getBooleanExtra("open_profile", false)) {
             BottomNavigationView navView = findViewById(R.id.nav_view);
             navView.setSelectedItemId(R.id.navigation_profile);
+        }
+        if (intent.getBooleanExtra("restart_theme", false)) {
+            recreate();
         }
     }
 }

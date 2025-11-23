@@ -1,10 +1,8 @@
 package com.bytecamp.herbit.ugcdemo.ui;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.net.Uri;
 import android.os.Bundle;
 import android.text.InputType;
 import android.view.LayoutInflater;
@@ -16,8 +14,6 @@ import android.widget.LinearLayout;
 import android.widget.PopupMenu;
 import android.widget.TextView;
 import android.widget.Toast;
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
@@ -44,29 +40,7 @@ public class ProfileFragment extends Fragment {
     private TextView tvPostCount, tvFollowCount, tvFanCount;
     private TabLayout tabLayout;
 
-    // Use Activity Result API instead of deprecated startActivityForResult
-    private final ActivityResultLauncher<Intent> pickAvatarLauncher = registerForActivityResult(
-            new ActivityResultContracts.StartActivityForResult(),
-            result -> {
-                if (result.getResultCode() == Activity.RESULT_OK && result.getData() != null) {
-                    Intent data = result.getData();
-                    if (data.getData() != null) {
-                        Uri uri = data.getData();
-                        final int takeFlags = data.getFlags()
-                                & (Intent.FLAG_GRANT_READ_URI_PERMISSION
-                                | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
-                        try {
-                            requireContext().getContentResolver().takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                        } catch (SecurityException e) {
-                            e.printStackTrace();
-                        }
-                        if (profileViewModel != null) {
-                            profileViewModel.updateAvatar(userId, uri.toString());
-                        }
-                    }
-                }
-            }
-    );
+    
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -122,13 +96,12 @@ public class ProfileFragment extends Fragment {
             profileViewModel.getFollowerCount(userId).observe(getViewLifecycleOwner(), count -> tvFanCount.setText(String.valueOf(count)));
         }
 
-        ivSettings.setOnClickListener(v -> showSettingsMenu(v));
+        ivSettings.setOnClickListener(v -> {
+            Intent intent = new Intent(getActivity(), com.bytecamp.herbit.ugcdemo.SettingsActivity.class);
+            startActivity(intent);
+        });
         
-        // Click avatar to change
-        ivAvatar.setOnClickListener(v -> pickAvatar());
         
-        // Click name to change
-        tvUsername.setOnClickListener(v -> showChangeNameDialog());
         
         // Tab Layout
         tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
@@ -170,51 +143,9 @@ public class ProfileFragment extends Fragment {
         return root;
     }
 
-    private void showSettingsMenu(View view) {
-        PopupMenu popup = new PopupMenu(getContext(), view);
-        popup.getMenu().add("修改密码");
-        popup.getMenu().add("注销账号"); // Delete account
-        popup.getMenu().add("退出登录"); // Logout
-        
-        popup.setOnMenuItemClickListener(item -> {
-            String title = item.getTitle().toString();
-            if (title.equals("修改密码")) {
-                showChangePasswordDialog();
-                return true;
-            } else if (title.equals("注销账号")) {
-                showDeleteAccountDialog();
-                return true;
-            } else if (title.equals("退出登录")) {
-                logout();
-                return true;
-            }
-            return false;
-        });
-        popup.show();
-    }
+    
 
-    private void pickAvatar() {
-        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
-        intent.addCategory(Intent.CATEGORY_OPENABLE);
-        intent.setType("image/*");
-        pickAvatarLauncher.launch(intent);
-    }
-
-    private void showChangeNameDialog() {
-        final EditText input = new EditText(getContext());
-        input.setHint("输入新昵称");
-        new AlertDialog.Builder(requireContext())
-            .setTitle("修改昵称")
-            .setView(input)
-            .setPositiveButton("确定", (dialog, which) -> {
-                String newName = input.getText().toString().trim();
-                if (!newName.isEmpty()) {
-                    profileViewModel.updateUsername(userId, newName);
-                }
-            })
-            .setNegativeButton("取消", null)
-            .show();
-    }
+    
 
     private void showChangePasswordDialog() {
         LinearLayout layout = new LinearLayout(getContext());
