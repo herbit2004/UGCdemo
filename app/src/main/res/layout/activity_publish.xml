@@ -5,35 +5,19 @@
     android:orientation="vertical"
     android:padding="16dp">
 
-    <LinearLayout
-        android:layout_width="match_parent"
+    <TextView
+        android:id="@+id/tvImageCount"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical">
-
-        <Button
-            android:id="@+id/btnAddImage"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:minHeight="@dimen/tap_min_size"
-            android:paddingHorizontal="12dp"
-            android:text="添加图片"
-            android:backgroundTint="?attr/colorSecondary"
-            android:textColor="?attr/colorOnSecondary" />
-
-        <TextView
-            android:id="@+id/tvImageCount"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:text="0/9" />
-    </LinearLayout>
+        android:text="0/9" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvImagePreview"
         android:layout_width="match_parent"
         android:layout_height="120dp"
         android:layout_marginTop="8dp"
+        android:padding="12dp"
+        android:clipToPadding="false"
         android:background="@color/gray_100" />
 
     <EditText

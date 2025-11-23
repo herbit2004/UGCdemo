@@ -64,21 +64,25 @@ public class PublishActivity extends AppCompatActivity {
         // 设置图片预览列表
         RecyclerView rvPreview = findViewById(R.id.rvImagePreview);
         rvPreview.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
-        adapter = new ImagePreviewAdapter(position -> {
-             selectedImages.remove(position);
-             adapter.setImages(selectedImages);
-             updateImageCount();
+        adapter = new ImagePreviewAdapter(MAX_IMAGE_COUNT, new ImagePreviewAdapter.OnImageClickListener() {
+            @Override
+            public void onImageClick(int position) {
+                selectedImages.remove(position);
+                adapter.setImages(selectedImages);
+                updateImageCount();
+            }
+            @Override
+            public void onAddClick() {
+                if (selectedImages.size() >= MAX_IMAGE_COUNT) {
+                    Toast.makeText(PublishActivity.this, "最多只能上传" + MAX_IMAGE_COUNT + "张图片", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                openGallery();
+            }
         });
         rvPreview.setAdapter(adapter);
 
-        // 添加图片按钮
-        findViewById(R.id.btnAddImage).setOnClickListener(v -> {
-             if (selectedImages.size() >= MAX_IMAGE_COUNT) {
-                 Toast.makeText(this, "最多只能上传" + MAX_IMAGE_COUNT + "张图片", Toast.LENGTH_SHORT).show();
-                 return;
-             }
-             openGallery();
-        });
+        // 移除顶部添加图片按钮，改为列表最后一项的“加号”按钮
         
         // 发布按钮
         btnPublish.setOnClickListener(v -> publishPost());

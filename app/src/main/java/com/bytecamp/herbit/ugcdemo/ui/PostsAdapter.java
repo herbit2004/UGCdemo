@@ -64,6 +64,7 @@ public class PostsAdapter extends RecyclerView.Adapter<PostsAdapter.PostViewHold
         private final TextView tvTitle;
         private final TextView tvAuthorName;
         private final TextView tvCoverTitle;
+        private final TextView tvCoverQuote;
         private final TextView tvLikeCount;
         private final TextView tvCommentCount;
         private final Context context;
@@ -77,6 +78,7 @@ public class PostsAdapter extends RecyclerView.Adapter<PostsAdapter.PostViewHold
             tvTitle = itemView.findViewById(R.id.tvTitle);
             tvAuthorName = itemView.findViewById(R.id.tvAuthorName);
             tvCoverTitle = itemView.findViewById(R.id.tvCoverTitle);
+            tvCoverQuote = itemView.findViewById(R.id.tvCoverQuote);
             tvLikeCount = itemView.findViewById(R.id.tvLikeCount);
             tvCommentCount = itemView.findViewById(R.id.tvCommentCount);
         }
@@ -147,6 +149,7 @@ public class PostsAdapter extends RecyclerView.Adapter<PostsAdapter.PostViewHold
         private void showImageCover(String path) {
             ivPostImage.setVisibility(View.VISIBLE);
             tvCoverTitle.setVisibility(View.GONE);
+            tvCoverQuote.setVisibility(View.GONE);
             Glide.with(context)
                     .load(path)
                     .placeholder(R.mipmap.ic_launcher)
@@ -156,6 +159,7 @@ public class PostsAdapter extends RecyclerView.Adapter<PostsAdapter.PostViewHold
         private void showTextCover(String title) {
             ivPostImage.setVisibility(View.GONE);
             tvCoverTitle.setVisibility(View.VISIBLE);
+            tvCoverQuote.setVisibility(View.VISIBLE);
             tvCoverTitle.setText(title);
         }
     }

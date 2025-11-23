@@ -63,6 +63,7 @@ public class DetailActivity extends AppCompatActivity {
     private ViewPager2 vpImages;
     private TabLayout tabLayout;
     private TextView tvDetailCoverTitle;
+    private TextView tvDetailCoverQuote;
     private TextView tvTitle, tvContent, tvPublishTime;
     private ImageView ivHeaderAvatar;
     private TextView tvHeaderName;
@@ -124,6 +125,7 @@ public class DetailActivity extends AppCompatActivity {
         vpImages = findViewById(R.id.vpImages);
         tabLayout = findViewById(R.id.tabLayout);
         tvDetailCoverTitle = findViewById(R.id.tvDetailCoverTitle);
+        tvDetailCoverQuote = findViewById(R.id.tvDetailCoverQuote);
         imageAdapter = new DetailImageAdapter();
         vpImages.setAdapter(imageAdapter);
         new TabLayoutMediator(tabLayout, vpImages, (tab, position) -> {}).attach();
@@ -250,12 +252,14 @@ public class DetailActivity extends AppCompatActivity {
         if (!images.isEmpty()) {
             vpImages.setVisibility(View.VISIBLE);
             tvDetailCoverTitle.setVisibility(View.GONE);
+            tvDetailCoverQuote.setVisibility(View.GONE);
             imageAdapter.setImageUrls(images);
             tabLayout.setVisibility(images.size() > 1 ? View.VISIBLE : View.GONE);
         } else {
             vpImages.setVisibility(View.GONE);
             tabLayout.setVisibility(View.GONE);
             tvDetailCoverTitle.setVisibility(View.VISIBLE);
+            tvDetailCoverQuote.setVisibility(View.VISIBLE);
             tvDetailCoverTitle.setText(postWithUser.post.title);
         }
 
