@@ -67,6 +67,11 @@ public class SearchViewModel extends AndroidViewModel {
         currentSort.setValue(sort);
     }
 
+    public int getCurrentSort() {
+        Integer v = currentSort.getValue();
+        return v != null ? v : 0;
+    }
+
     private static class CombinedSearchFilter {
         String query;
         int sort;

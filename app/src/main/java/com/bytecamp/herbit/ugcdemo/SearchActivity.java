@@ -8,6 +8,7 @@ import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.PopupMenu;
+import android.util.TypedValue;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.RecyclerView;
@@ -78,14 +79,32 @@ public class SearchActivity extends AppCompatActivity {
 
     private void showSortMenu(View v) {
         PopupMenu popup = new PopupMenu(this, v);
-        popup.getMenu().add(0, 0, 0, "最近发表");
-        popup.getMenu().add(0, 1, 1, "最多喜欢");
-        popup.getMenu().add(0, 2, 2, "最近评论");
+        int currentSort = viewModel.getCurrentSort();
+        int secondary = getAttrColor(com.google.android.material.R.attr.colorSecondary);
+
+        android.text.SpannableString sRecent = new android.text.SpannableString("最近发表");
+        android.text.SpannableString sPopular = new android.text.SpannableString("最多喜欢");
+        android.text.SpannableString sComment = new android.text.SpannableString("最近评论");
+
+        if (currentSort == 0) sRecent.setSpan(new android.text.style.ForegroundColorSpan(secondary), 0, sRecent.length(), android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        else if (currentSort == 1) sPopular.setSpan(new android.text.style.ForegroundColorSpan(secondary), 0, sPopular.length(), android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        else if (currentSort == 2) sComment.setSpan(new android.text.style.ForegroundColorSpan(secondary), 0, sComment.length(), android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+        android.view.Menu menu = popup.getMenu();
+        android.view.MenuItem itemRecent = menu.add(0, 0, 0, sRecent);
+        android.view.MenuItem itemPopular = menu.add(0, 1, 1, sPopular);
+        android.view.MenuItem itemComment = menu.add(0, 2, 2, sComment);
         
         popup.setOnMenuItemClickListener(item -> {
             viewModel.setSort(item.getItemId());
             return true;
         });
         popup.show();
+    }
+
+    private int getAttrColor(int attr) {
+        TypedValue typedValue = new TypedValue();
+        getTheme().resolveAttribute(attr, typedValue, true);
+        return typedValue.data;
     }
 }

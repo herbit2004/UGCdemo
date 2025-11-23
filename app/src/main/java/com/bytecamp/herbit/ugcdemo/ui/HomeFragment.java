@@ -183,6 +183,15 @@ public class HomeFragment extends Fragment {
         sortPopup.show();
     }
 
+    public void refreshCurrent() {
+        if (homeViewModel != null) {
+            int currentTab = homeViewModel.getCurrentTab();
+            int currentSort = homeViewModel.getCurrentSort();
+            homeViewModel.setTab(currentTab);
+            homeViewModel.setSort(currentSort);
+        }
+    }
+
     public static class RecyclerPageFragment extends Fragment {
         public RecyclerPageFragment() {}
         public static RecyclerPageFragment newInstance(int position) {
@@ -196,17 +205,68 @@ public class HomeFragment extends Fragment {
         @Override
         public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
             int position = getArguments() != null ? getArguments().getInt("position", 0) : 0;
-            RecyclerView rv = new RecyclerView(requireContext());
+            View root = inflater.inflate(R.layout.page_home_list, container, false);
+            androidx.swiperefreshlayout.widget.SwipeRefreshLayout swipe = root.findViewById(R.id.swipeRefresh);
+            RecyclerView rv = root.findViewById(R.id.recyclerView);
+            View emptyView = root.findViewById(R.id.emptyView);
+            View errorView = root.findViewById(R.id.errorView);
+            View btnRetryEmpty = root.findViewById(R.id.btnRetryEmpty);
+            View btnRetryError = root.findViewById(R.id.btnRetryError);
+
             StaggeredGridLayoutManager layoutManager = new StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL);
             layoutManager.setGapStrategy(StaggeredGridLayoutManager.GAP_HANDLING_NONE);
             rv.setLayoutManager(layoutManager);
             HomeFragment parent = (HomeFragment) getParentFragment();
             if (parent != null) {
-                rv.setAdapter(parent.getAdapter(position));
+                RecyclerView.Adapter adapter = parent.getAdapter(position);
+                rv.setAdapter(adapter);
+                adapter.registerAdapterDataObserver(new RecyclerView.AdapterDataObserver(){
+                    @Override
+                    public void onChanged() {
+                        updateState(adapter, emptyView, errorView);
+                    }
+                });
+                updateState(adapter, emptyView, errorView);
             }
-            rv.setClipToPadding(false);
-            rv.setPadding(4,4,4,4);
-            return rv;
+
+            swipe.setOnRefreshListener(() -> {
+                swipe.setRefreshing(false);
+                HomeFragment p = (HomeFragment) getParentFragment();
+                if (p != null) p.refreshCurrent();
+            });
+
+            btnRetryEmpty.setOnClickListener(v -> {
+                HomeFragment p = (HomeFragment) getParentFragment();
+                if (p != null) p.refreshCurrent();
+            });
+            btnRetryError.setOnClickListener(v -> {
+                HomeFragment p = (HomeFragment) getParentFragment();
+                if (p != null) p.refreshCurrent();
+            });
+
+            rv.addOnScrollListener(new RecyclerView.OnScrollListener(){
+                @Override
+                public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
+                    if (dy > 0) {
+                        int[] last = new int[2];
+                        layoutManager.findLastVisibleItemPositions(last);
+                        int lastPos = Math.max(last[0], last[1]);
+                        RecyclerView.Adapter a = recyclerView.getAdapter();
+                        if (a != null && lastPos >= a.getItemCount() - 1) {
+                            HomeFragment p = (HomeFragment) getParentFragment();
+                            if (p != null) p.refreshCurrent();
+                        }
+                    }
+                }
+            });
+
+            return root;
+        }
+
+        private void updateState(RecyclerView.Adapter adapter, View emptyView, View errorView) {
+            boolean isEmpty = adapter == null || adapter.getItemCount() == 0;
+            emptyView.setVisibility(isEmpty ? View.VISIBLE : View.GONE);
+            errorView.setVisibility(View.GONE);
         }
     }
 }
