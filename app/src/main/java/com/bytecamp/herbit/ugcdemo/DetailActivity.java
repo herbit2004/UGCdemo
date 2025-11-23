@@ -27,7 +27,7 @@ import com.bytecamp.herbit.ugcdemo.data.model.CommentWithUser;
 import com.bytecamp.herbit.ugcdemo.data.model.PostWithUser;
 import com.bytecamp.herbit.ugcdemo.ui.CommentsAdapter;
 import com.bytecamp.herbit.ugcdemo.ui.DetailImageAdapter;
-import com.bytecamp.herbit.ugcdemo.utils.TimeUtils;
+import com.bytecamp.herbit.ugcdemo.util.TimeUtils;
 import com.bytecamp.herbit.ugcdemo.viewmodel.DetailViewModel;
 import com.google.android.material.tabs.TabLayout;
 import com.google.android.material.tabs.TabLayoutMediator;

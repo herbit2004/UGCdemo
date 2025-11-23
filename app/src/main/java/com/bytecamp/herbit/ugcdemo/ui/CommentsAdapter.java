@@ -11,7 +11,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.bytecamp.herbit.ugcdemo.R;
 import com.bytecamp.herbit.ugcdemo.data.model.CommentLikeCount;
 import com.bytecamp.herbit.ugcdemo.data.model.CommentWithUser;
-import com.bytecamp.herbit.ugcdemo.utils.TimeUtils;
+import com.bytecamp.herbit.ugcdemo.util.TimeUtils;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;

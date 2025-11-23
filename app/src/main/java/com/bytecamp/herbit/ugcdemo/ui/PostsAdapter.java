@@ -10,6 +10,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.recyclerview.widget.StaggeredGridLayoutManager;
 import com.bumptech.glide.Glide;
 import com.bytecamp.herbit.ugcdemo.DetailActivity;
 import com.bytecamp.herbit.ugcdemo.MainActivity;
@@ -95,6 +96,17 @@ public class PostsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
         boolean showFooter = loading || (!hasMore && posts.size() > 0);
         if (showFooter && position == getItemCount() - 1) return VIEW_FOOTER;
         return VIEW_POST;
+    }
+
+    @Override
+    public void onViewAttachedToWindow(@NonNull RecyclerView.ViewHolder holder) {
+        super.onViewAttachedToWindow(holder);
+        if (holder instanceof FooterViewHolder) {
+            ViewGroup.LayoutParams lp = holder.itemView.getLayoutParams();
+            if (lp instanceof StaggeredGridLayoutManager.LayoutParams) {
+                ((StaggeredGridLayoutManager.LayoutParams) lp).setFullSpan(true);
+            }
+        }
     }
 
     /**
