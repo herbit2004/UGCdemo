@@ -131,12 +131,14 @@
                 android:layout_height="wrap_content"
                 android:textSize="20sp"
                 android:textStyle="bold"
+                android:textColor="#000"
                 android:padding="16dp" />
 
             <TextView
                 android:id="@+id/tvDetailContent"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:textColor="#000"
                 android:paddingStart="16dp"
                 android:paddingEnd="16dp"
                 android:paddingBottom="8dp" />
@@ -177,8 +179,10 @@
     </androidx.core.widget.NestedScrollView>
 
     <LinearLayout
+        android:id="@+id/bottomBar"
         android:layout_width="match_parent"
-        android:layout_height="60dp"
+        android:layout_height="wrap_content"
+        android:minHeight="60dp"
         android:layout_gravity="bottom"
         android:background="#FFF"
         android:orientation="horizontal"
@@ -199,11 +203,18 @@
         <EditText
             android:id="@+id/etComment"
             android:layout_width="0dp"
-            android:layout_height="40dp"
+            android:layout_height="wrap_content"
+            android:minHeight="40dp"
             android:layout_weight="1"
             android:background="@drawable/bg_search_box"
             android:hint="说点什么..."
-            android:paddingHorizontal="12dp" />
+            android:paddingHorizontal="12dp"
+            android:paddingTop="8dp"
+            android:inputType="textMultiLine"
+            android:minLines="1"
+            android:maxLines="4"
+            android:gravity="top|start"
+            android:scrollbars="vertical" />
 
         <Button
             android:id="@+id/btnSendComment"

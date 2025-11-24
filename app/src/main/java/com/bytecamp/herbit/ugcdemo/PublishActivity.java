@@ -110,7 +110,7 @@ public class PublishActivity extends AppCompatActivity {
         target.getLocationOnScreen(tloc);
         final int rx = cx - tloc[0];
         int ryTmp = cy - tloc[1];
-        int dy = Math.round(dp(20));
+        int dy = Math.round(dp(32));
         final int ry = Math.max(0, ryTmp - dy);
         targetForReveal = target;
         revealRx = rx;

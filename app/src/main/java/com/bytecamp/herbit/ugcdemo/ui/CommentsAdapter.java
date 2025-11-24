@@ -21,6 +21,9 @@ import java.util.Set;
 
 public class CommentsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     private List<CommentWithUser> comments = new ArrayList<>();
+    private List<CommentWithUser> rootComments = new ArrayList<>();
+    private Map<Long, List<CommentWithUser>> childrenByRoot = new HashMap<>();
+    private Map<Long, CommentWithUser> byId = new HashMap<>();
     private long postAuthorId;
     private long currentUserId;
     private Set<Long> likedCommentIds = new HashSet<>(); // Store liked comment IDs
@@ -43,8 +46,43 @@ public class CommentsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
     }
 
     public void setComments(List<CommentWithUser> comments) {
-        this.comments = comments;
+        this.comments = comments != null ? comments : new ArrayList<>();
+        rebuildThreading();
         notifyDataSetChanged();
+    }
+
+    private void rebuildThreading() {
+        rootComments.clear();
+        childrenByRoot.clear();
+        byId.clear();
+        for (CommentWithUser c : comments) {
+            byId.put(c.comment.comment_id, c);
+        }
+        for (CommentWithUser c : comments) {
+            Long pid = c.comment.parent_comment_id;
+            if (pid == null || pid == 0) {
+                rootComments.add(c);
+            } else {
+                long rootId = resolveRootId(pid);
+                childrenByRoot.computeIfAbsent(rootId, k -> new ArrayList<>()).add(c);
+            }
+        }
+    }
+
+    private long resolveRootId(Long startParentId) {
+        Long current = startParentId;
+        int guard = 0;
+        while (current != null && current != 0 && guard < 20) {
+            CommentWithUser parent = byId.get(current);
+            if (parent == null) break;
+            Long ppid = parent.comment.parent_comment_id;
+            if (ppid == null || ppid == 0) {
+                return parent.comment.comment_id;
+            }
+            current = ppid;
+            guard++;
+        }
+        return startParentId;
     }
     
     public void setPostAuthorId(long postAuthorId) {
@@ -97,7 +135,7 @@ public class CommentsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
             }
             return;
         }
-        CommentWithUser item = comments.get(position);
+        CommentWithUser item = rootComments.get(position);
         CommentViewHolder holderC = (CommentViewHolder) holder;
         
         // Author
@@ -121,13 +159,9 @@ public class CommentsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
         // Time
         holderC.tvTime.setText(TimeUtils.formatTime(item.comment.comment_time));
         
-        // Indentation (UI nesting)
+        // No indentation for root; replies shown inside card
         LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) holderC.llContainer.getLayoutParams();
-        if (item.comment.parent_comment_id != null && item.comment.parent_comment_id != 0) {
-            params.setMarginStart(dpToPx(32));
-        } else {
-            params.setMarginStart(0);
-        }
+        params.setMarginStart(0);
         holderC.llContainer.setLayoutParams(params);
 
         // Badge
@@ -148,12 +182,12 @@ public class CommentsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
         }
         holderC.tvLikeCount.setText(String.valueOf(count));
         
-        // Listeners
-        holderC.itemView.setOnClickListener(v -> {
+        // Listeners on container to avoid child interception
+        holderC.llContainer.setOnClickListener(v -> {
             if (listener != null) listener.onReply(item);
         });
         
-        holderC.itemView.setOnLongClickListener(v -> {
+        holderC.llContainer.setOnLongClickListener(v -> {
             if (listener != null && item.comment.author_id == currentUserId) {
                 listener.onDelete(item);
                 return true;
@@ -165,6 +199,48 @@ public class CommentsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
         likeContainer.setOnClickListener(v -> {
             if (listener != null) listener.onLike(item);
         });
+
+        LinearLayout replies = holderC.llReplies;
+        replies.removeAllViews();
+        List<CommentWithUser> children = childrenByRoot.get(item.comment.comment_id);
+        if (children != null && !children.isEmpty()) {
+            for (CommentWithUser child : children) {
+                android.content.Context ctx = holder.itemView.getContext();
+                View row = LayoutInflater.from(ctx).inflate(R.layout.item_comment_reply, replies, false);
+
+                TextView tvReplyContent = row.findViewById(R.id.tvReplyContent);
+                TextView tvReplyTime = row.findViewById(R.id.tvReplyTime);
+                LinearLayout llReplyLike = row.findViewById(R.id.llReplyLike);
+                TextView tvReplyLikeCount = row.findViewById(R.id.tvReplyLikeCount);
+                ImageView ivReplyLike = row.findViewById(R.id.ivReplyLike);
+
+                String author = child.user != null ? child.user.username : "";
+                String body;
+                if (child.comment.reply_to_username != null) {
+                    body = author + " 回复 " + child.comment.reply_to_username + ": " + child.comment.content;
+                } else {
+                    body = author + ": " + child.comment.content;
+                }
+                tvReplyContent.setText(body);
+
+                tvReplyTime.setText(TimeUtils.formatTime(child.comment.comment_time));
+
+                int countChild = likeCounts.containsKey(child.comment.comment_id) ? likeCounts.get(child.comment.comment_id) : 0;
+                tvReplyLikeCount.setText(String.valueOf(countChild));
+                boolean isLikedChild = likedCommentIds.contains(child.comment.comment_id);
+                ivReplyLike.setImageResource(isLikedChild ? R.drawable.ic_like_on : R.drawable.ic_like_off);
+
+                llReplyLike.setOnClickListener(v -> { if (listener != null) listener.onLike(child); });
+
+                row.setOnClickListener(v -> { if (listener != null) listener.onReply(child); });
+                row.setOnLongClickListener(v -> {
+                    if (listener != null && child.comment.author_id == currentUserId) { listener.onDelete(child); return true; }
+                    return false;
+                });
+
+                replies.addView(row);
+            }
+        }
     }
     
     private int dpToPx(int dp) {
@@ -173,13 +249,13 @@ public class CommentsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
 
     @Override
     public int getItemCount() {
-        boolean showFooter = loading || (!hasMore && comments.size() > 0);
-        return comments.size() + (showFooter ? 1 : 0);
+        boolean showFooter = loading || (!hasMore && rootComments.size() > 0);
+        return rootComments.size() + (showFooter ? 1 : 0);
     }
 
     @Override
     public int getItemViewType(int position) {
-        boolean showFooter = loading || (!hasMore && comments.size() > 0);
+        boolean showFooter = loading || (!hasMore && rootComments.size() > 0);
         if (showFooter && position == getItemCount() - 1) return VIEW_FOOTER;
         return VIEW_COMMENT;
     }
@@ -198,6 +274,7 @@ public class CommentsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
         TextView tvAuthor, tvContent, tvBadge, tvLikeCount, tvTime;
         ImageView ivLike;
         LinearLayout llContainer;
+        LinearLayout llReplies;
         
         CommentViewHolder(View itemView) {
             super(itemView);
@@ -208,6 +285,7 @@ public class CommentsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
             tvTime = itemView.findViewById(R.id.tvCommentTime);
             ivLike = itemView.findViewById(R.id.ivCommentLike);
             llContainer = itemView.findViewById(R.id.llCommentContainer);
+            llReplies = itemView.findViewById(R.id.llReplies);
         }
     }
     static class FooterViewHolder extends RecyclerView.ViewHolder {

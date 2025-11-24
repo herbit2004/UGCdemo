@@ -75,6 +75,7 @@ public class DetailActivity extends AppCompatActivity {
     private EditText etComment;
     private Button btnSend;
     private ImageView ivCancelReply;
+    private View bottomBar;
     private LinearLayout llPostLike;
     private ImageView ivLike;
     private TextView tvLikeCount;
@@ -166,6 +167,7 @@ public class DetailActivity extends AppCompatActivity {
 
         // Input Area
         nestedScrollView = findViewById(R.id.nestedScroll);
+        bottomBar = findViewById(R.id.bottomBar);
         etComment = findViewById(R.id.etComment);
         btnSend = findViewById(R.id.btnSendComment);
         ivCancelReply = findViewById(R.id.ivCancelReply);
@@ -179,6 +181,30 @@ public class DetailActivity extends AppCompatActivity {
         llCommentIndicator = findViewById(R.id.llCommentIndicator);
         ivCommentIcon = findViewById(R.id.ivCommentIcon);
         tvCommentCount = findViewById(R.id.tvCommentCount);
+
+        if (bottomBar != null && nestedScrollView != null) {
+            bottomBar.getViewTreeObserver().addOnGlobalLayoutListener(new android.view.ViewTreeObserver.OnGlobalLayoutListener() {
+                @Override public void onGlobalLayout() {
+                    int h = bottomBar.getHeight();
+                    android.view.ViewGroup.MarginLayoutParams lp = (android.view.ViewGroup.MarginLayoutParams) nestedScrollView.getLayoutParams();
+                    if (lp.bottomMargin != h) {
+                        lp.bottomMargin = h;
+                        nestedScrollView.setLayoutParams(lp);
+                    }
+                }
+            });
+        }
+
+        etComment.setOnTouchListener((v, ev) -> {
+            boolean canScroll = v.canScrollVertically(1) || v.canScrollVertically(-1);
+            if (canScroll) {
+                v.getParent().requestDisallowInterceptTouchEvent(true);
+                if (ev.getAction() == android.view.MotionEvent.ACTION_UP || ev.getAction() == android.view.MotionEvent.ACTION_CANCEL) {
+                    v.getParent().requestDisallowInterceptTouchEvent(false);
+                }
+            }
+            return false;
+        });
     }
 
     private void setupListeners() {

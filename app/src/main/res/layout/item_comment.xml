@@ -3,15 +3,26 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:paddingStart="8dp"
-    android:paddingEnd="8dp"
-    android:paddingTop="8dp">
+    android:paddingStart="12dp"
+    android:paddingEnd="12dp"
+    android:paddingTop="4dp"
+    android:paddingBottom="4dp">
 
     <LinearLayout
         android:id="@+id/llCommentContainer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:background="@drawable/bg_input_box"
+        android:foreground="@drawable/ripple_publish"
+        android:clickable="true"
+        android:focusable="true"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:paddingTop="10dp"
+        android:paddingBottom="10dp"
+        android:layout_marginTop="2dp"
+        android:layout_marginBottom="2dp">
         
         <RelativeLayout
             android:layout_width="match_parent"
@@ -21,6 +32,7 @@
                 android:id="@+id/tvCommentAuthor"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
                 android:textStyle="bold"
                 android:textColor="#333"/>
             
@@ -29,13 +41,12 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_toEndOf="@id/tvCommentAuthor"
-                android:text=" 楼主 "
-                android:background="#EFEFEF"
-                android:textColor="#FF6600"
+                android:text="楼主"
+                android:background="@drawable/bg_badge_white_round"
+                android:textColor="?attr/colorSecondary"
                 android:textSize="10sp"
-                android:paddingStart="4dp"
-                android:paddingEnd="4dp"
-                android:layout_marginStart="4dp"
+                android:layout_marginStart="6dp"
+                android:layout_marginTop="12dp"
                 android:visibility="gone"/>
                 
             <LinearLayout
@@ -44,7 +55,7 @@
                 android:layout_height="wrap_content"
                 android:layout_alignParentEnd="true"
                 android:gravity="center_vertical"
-                android:padding="4dp"
+                android:padding="6dp"
                 android:background="?attr/selectableItemBackground"
                 android:minHeight="@dimen/tap_min_size"
                 android:minWidth="@dimen/tap_min_size"
@@ -57,7 +68,7 @@
                     android:layout_height="wrap_content"
                     android:text="0"
                     android:textSize="12sp"
-                    android:textColor="#999"/>
+                    android:textColor="#666"/>
                     
                 <ImageView
                     android:id="@+id/ivCommentLike"
@@ -70,26 +81,34 @@
         
         <TextView
             android:id="@+id/tvCommentContent"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"/>
+            android:layout_marginTop="6dp"
+            android:textColor="#333"
+            android:textSize="14sp"
+            android:lineSpacingExtra="2dp"/>
             
         <TextView
             android:id="@+id/tvCommentTime"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="end"
-            android:text="12:00"
-            android:textSize="10sp"
+            android:layout_gravity="start"
+            android:textSize="11sp"
             android:textColor="#999"
-            android:layout_marginTop="4dp"/>
+            android:layout_marginTop="8dp"/>
+
+        <LinearLayout
+            android:id="@+id/llReplies"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginTop="8dp"/>
             
     </LinearLayout>
 
     <View
         android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:background="#EEE"
-        android:layout_marginTop="8dp"/>
+        android:layout_height="4dp"
+        android:background="@android:color/transparent"/>
 
 </LinearLayout>
