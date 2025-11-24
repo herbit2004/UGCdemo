@@ -49,18 +49,19 @@
                 android:layout_marginTop="12dp"
                 android:visibility="gone"/>
                 
-            <LinearLayout
-                android:id="@+id/llCommentLike"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentEnd="true"
-                android:gravity="center_vertical"
-                android:padding="6dp"
-                android:background="?attr/selectableItemBackground"
-                android:minHeight="@dimen/tap_min_size"
-                android:minWidth="@dimen/tap_min_size"
-                android:clickable="true"
-                android:focusable="true">
+        <LinearLayout
+            android:id="@+id/llCommentLike"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:gravity="end|center_vertical"
+            android:paddingStart="4dp"
+            android:paddingEnd="2dp"
+            android:background="?attr/selectableItemBackground"
+            android:minHeight="@dimen/tap_min_size"
+            android:minWidth="@dimen/tap_min_size"
+            android:clickable="true"
+            android:focusable="true">
                 
                 <TextView
                     android:id="@+id/tvCommentLikeCount"
@@ -72,8 +73,8 @@
                     
                 <ImageView
                     android:id="@+id/ivCommentLike"
-                    android:layout_width="@dimen/icon_size"
-                    android:layout_height="@dimen/icon_size"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
                     android:src="@drawable/ic_like"
                     android:layout_marginStart="2dp"/>
             </LinearLayout>

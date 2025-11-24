@@ -7,4 +7,5 @@
     <dimen name="space_xl">24dp</dimen>
     <dimen name="tap_min_size">48dp</dimen>
     <dimen name="icon_size">24dp</dimen>
+    <dimen name="bottom_reserved_space">96dp</dimen>
 </resources>

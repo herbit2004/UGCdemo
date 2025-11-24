@@ -220,6 +220,8 @@ public class HomeFragment extends Fragment {
     public static class RecyclerPageFragment extends Fragment {
         private boolean loadingMore = false;
         private long lastLoadTime = 0L;
+        private RecyclerView rv;
+        private StaggeredGridLayoutManager layoutManager;
         public RecyclerPageFragment() {}
         public static RecyclerPageFragment newInstance(int position) {
             RecyclerPageFragment f = new RecyclerPageFragment();
@@ -234,11 +236,12 @@ public class HomeFragment extends Fragment {
             int position = getArguments() != null ? getArguments().getInt("position", 0) : 0;
             View root = inflater.inflate(R.layout.page_home_list, container, false);
             androidx.swiperefreshlayout.widget.SwipeRefreshLayout swipe = root.findViewById(R.id.swipeRefresh);
-            RecyclerView rv = root.findViewById(R.id.recyclerView);
+            rv = root.findViewById(R.id.recyclerView);
 
-            StaggeredGridLayoutManager layoutManager = new StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL);
+            layoutManager = new StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL);
             layoutManager.setGapStrategy(StaggeredGridLayoutManager.GAP_HANDLING_NONE);
             rv.setLayoutManager(layoutManager);
+            rv.setItemAnimator(null);
             HomeFragment parent = (HomeFragment) getParentFragment();
             if (parent != null) {
                 RecyclerView.Adapter adapter = parent.getAdapter(position);
@@ -291,6 +294,23 @@ public class HomeFragment extends Fragment {
             });
 
             return root;
+        }
+
+        @Override
+        public void onResume() {
+            super.onResume();
+            ensureTopAligned();
+        }
+
+        private void ensureTopAligned() {
+            if (rv == null || layoutManager == null) return;
+            int[] first = new int[2];
+            layoutManager.findFirstVisibleItemPositions(first);
+            int minFirst = Math.min(first[0], first[1]);
+            if (minFirst <= 0) {
+                layoutManager.invalidateSpanAssignments();
+                layoutManager.scrollToPositionWithOffset(0, 0);
+            }
         }
     }
 }

@@ -231,6 +231,25 @@ public class DetailActivity extends AppCompatActivity {
             }
         });
 
+        etComment.setOnFocusChangeListener((v, hasFocus) -> {
+            if (hasFocus) {
+                enterInputState();
+            } else {
+                exitInputState();
+            }
+        });
+
+        nestedScrollView.setOnTouchListener((v, ev) -> {
+            if (etComment != null && etComment.hasFocus()) {
+                if (replyToCommentId != null || replyToUsername != null) {
+                    exitReplyMode();
+                } else {
+                    exitInputState();
+                }
+            }
+            return false;
+        });
+
         // 评论列表交互
         commentsAdapter.setListener(new CommentsAdapter.OnCommentActionListener() {
             @Override
@@ -388,6 +407,7 @@ public class DetailActivity extends AppCompatActivity {
         ivCancelReply.setVisibility(View.VISIBLE);
         InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
         imm.showSoftInput(etComment, InputMethodManager.SHOW_IMPLICIT);
+        enterInputState();
     }
 
     private void exitReplyMode() {
@@ -398,6 +418,22 @@ public class DetailActivity extends AppCompatActivity {
         ivCancelReply.setVisibility(View.GONE);
         InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
         imm.hideSoftInputFromWindow(etComment.getWindowToken(), 0);
+        exitInputState();
+    }
+
+    private void enterInputState() {
+        if (llPostLike != null) llPostLike.setVisibility(View.GONE);
+        if (llCommentIndicator != null) llCommentIndicator.setVisibility(View.GONE);
+    }
+
+    private void exitInputState() {
+        if (llPostLike != null) llPostLike.setVisibility(View.VISIBLE);
+        if (llCommentIndicator != null) llCommentIndicator.setVisibility(View.VISIBLE);
+        if (etComment != null) {
+            etComment.clearFocus();
+            InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+            if (imm != null) imm.hideSoftInputFromWindow(etComment.getWindowToken(), 0);
+        }
     }
 
     private void showPostMenu(View v) {
