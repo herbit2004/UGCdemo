@@ -42,9 +42,6 @@ public class MainActivity extends AppCompatActivity {
                         .replace(R.id.nav_host_fragment, new HomeFragment())
                         .commit();
                 return true;
-            } else if (itemId == R.id.navigation_publish) {
-                startActivity(new Intent(this, PublishActivity.class));
-                return false; // Don't select the item
             } else if (itemId == R.id.navigation_profile) {
                 getSupportFragmentManager().beginTransaction()
                         .replace(R.id.nav_host_fragment, new ProfileFragment())
@@ -52,6 +49,18 @@ public class MainActivity extends AppCompatActivity {
                 return true;
             }
             return false;
+        });
+
+        findViewById(R.id.btnPublishMain).setOnClickListener(v -> {
+            int[] loc = new int[2];
+            v.getLocationOnScreen(loc);
+            int cx = loc[0] + v.getWidth() / 2;
+            int cy = loc[1] + v.getHeight() / 2;
+            Intent intent = new Intent(this, PublishActivity.class);
+            intent.putExtra("reveal_cx", cx);
+            intent.putExtra("reveal_cy", cy);
+            startActivity(intent);
+            overridePendingTransition(0, 0);
         });
     }
     

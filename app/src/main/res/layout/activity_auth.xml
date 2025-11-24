@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
@@ -10,7 +11,7 @@
         android:id="@+id/etUsername"
         android:layout_width="match_parent"
         android:layout_height="44dp"
-        android:background="@drawable/bg_input_box"
+        android:background="@drawable/bg_search_box"
         android:hint="用户名"
         android:paddingHorizontal="12dp"/>
 
@@ -19,7 +20,7 @@
         android:layout_width="match_parent"
         android:layout_height="44dp"
         android:inputType="textPassword"
-        android:background="@drawable/bg_input_box"
+        android:background="@drawable/bg_search_box"
         android:hint="密码"
         android:layout_marginTop="16dp"
         android:paddingHorizontal="12dp"/>
@@ -30,7 +31,10 @@
         android:layout_height="wrap_content"
         android:minHeight="@dimen/tap_min_size"
         android:text="登录"
-        android:layout_marginTop="24dp" />
+        android:layout_marginTop="24dp"
+        android:background="@drawable/bg_follow_btn"
+        android:textColor="?attr/colorOnSecondary"
+        app:backgroundTint="?attr/colorSecondary"/>
 
     <TextView
         android:id="@+id/tvSwitchMode"

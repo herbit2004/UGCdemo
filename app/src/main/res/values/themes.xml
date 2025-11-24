@@ -65,4 +65,10 @@
         <item name="colorSecondaryVariant">@color/purple_700</item>
         <item name="colorOnSecondary">@color/white</item>
     </style>
+
+    <style name="Theme.UGCdemo.TranslucentOverlay" parent="Theme.UGCdemo">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowAnimationStyle">@style/AppWindowAnimation</item>
+    </style>
 </resources>

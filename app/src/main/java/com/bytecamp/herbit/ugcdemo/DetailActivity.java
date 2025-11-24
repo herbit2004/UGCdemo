@@ -71,12 +71,16 @@ public class DetailActivity extends AppCompatActivity {
     private Button btnFollow;
     private ImageView ivMoreOptions;
     private RecyclerView rvComments;
+    private androidx.core.widget.NestedScrollView nestedScrollView;
     private EditText etComment;
     private Button btnSend;
     private ImageView ivCancelReply;
     private LinearLayout llPostLike;
     private ImageView ivLike;
     private TextView tvLikeCount;
+    private LinearLayout llCommentIndicator;
+    private ImageView ivCommentIcon;
+    private TextView tvCommentCount;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -161,6 +165,7 @@ public class DetailActivity extends AppCompatActivity {
         });
 
         // Input Area
+        nestedScrollView = findViewById(R.id.nestedScroll);
         etComment = findViewById(R.id.etComment);
         btnSend = findViewById(R.id.btnSendComment);
         ivCancelReply = findViewById(R.id.ivCancelReply);
@@ -169,6 +174,11 @@ public class DetailActivity extends AppCompatActivity {
         llPostLike = findViewById(R.id.llPostLike);
         ivLike = findViewById(R.id.ivPostLike);
         tvLikeCount = findViewById(R.id.tvPostLikeCount);
+
+        // Comment Indicator Area
+        llCommentIndicator = findViewById(R.id.llCommentIndicator);
+        ivCommentIcon = findViewById(R.id.ivCommentIcon);
+        tvCommentCount = findViewById(R.id.tvCommentCount);
     }
 
     private void setupListeners() {
@@ -187,6 +197,13 @@ public class DetailActivity extends AppCompatActivity {
 
         // 帖子点赞 (初始状态由 observer 更新)
         llPostLike.setOnClickListener(v -> detailViewModel.toggleLike(currentUserId, 0, postId, false));
+
+        // 点击评论指示器，滚动到评论区顶部
+        llCommentIndicator.setOnClickListener(v -> {
+            if (nestedScrollView != null && rvComments != null) {
+                nestedScrollView.smoothScrollTo(0, rvComments.getTop());
+            }
+        });
 
         // 评论列表交互
         commentsAdapter.setListener(new CommentsAdapter.OnCommentActionListener() {
@@ -234,6 +251,9 @@ public class DetailActivity extends AppCompatActivity {
             commentsAdapter.setComments(comments);
             commentsAdapter.setLoading(false);
             commentsAdapter.setHasMore(detailViewModel.hasMoreComments());
+            if (tvCommentCount != null) {
+                tvCommentCount.setText(String.valueOf(comments != null ? comments.size() : 0));
+            }
         });
         detailViewModel.initComments(postId);
 

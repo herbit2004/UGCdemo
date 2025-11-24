@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
@@ -66,8 +67,9 @@
                         android:layout_height="40dp"
                         android:text="保存"
                         android:layout_marginStart="8dp"
-                        android:backgroundTint="?attr/colorSecondary"
-                        android:textColor="?attr/colorOnSecondary"/>
+                        android:background="@drawable/bg_follow_btn"
+                        android:textColor="?attr/colorOnSecondary"
+                        app:backgroundTint="?attr/colorSecondary"/>
                 </LinearLayout>
             </LinearLayout>
         </LinearLayout>
@@ -298,8 +300,9 @@
             android:layout_height="wrap_content"
             android:text="修改密码"
             android:layout_marginTop="16dp"
-            android:backgroundTint="?attr/colorSecondary"
-            android:textColor="?attr/colorOnSecondary"/>
+            android:background="@drawable/bg_follow_btn"
+            android:textColor="?attr/colorOnSecondary"
+            app:backgroundTint="?attr/colorSecondary"/>
 
         <Button
             android:id="@+id/btnDeleteAccount"
@@ -307,8 +310,9 @@
             android:layout_height="wrap_content"
             android:text="注销账号"
             android:layout_marginTop="8dp"
-            android:backgroundTint="?attr/colorSecondary"
-            android:textColor="?attr/colorOnSecondary"/>
+            android:background="@drawable/bg_follow_btn"
+            android:textColor="?attr/colorOnSecondary"
+            app:backgroundTint="?attr/colorSecondary"/>
 
         <Button
             android:id="@+id/btnLogout"
@@ -316,8 +320,9 @@
             android:layout_height="wrap_content"
             android:text="退出登录"
             android:layout_marginTop="8dp"
-            android:backgroundTint="?attr/colorSecondary"
-            android:textColor="?attr/colorOnSecondary"/>
+            android:background="@drawable/bg_follow_btn"
+            android:textColor="?attr/colorOnSecondary"
+            app:backgroundTint="?attr/colorSecondary"/>
 
     </LinearLayout>
 

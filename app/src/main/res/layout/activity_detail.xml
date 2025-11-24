@@ -42,7 +42,7 @@
                     android:layout_width="60dp"
                     android:layout_height="32dp"
                     android:background="@drawable/bg_follow_btn"
-                    app:backgroundTint="@null"
+                    app:backgroundTint="?attr/colorSecondary"
                     android:text="关注"
                     android:textColor="?attr/colorOnSecondary"
                     android:textSize="12sp"
@@ -66,6 +66,7 @@
     </com.google.android.material.appbar.AppBarLayout>
 
     <androidx.core.widget.NestedScrollView
+        android:id="@+id/nestedScroll"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         app:layout_behavior="@string/appbar_scrolling_view_behavior"
@@ -151,7 +152,7 @@
                 android:textColor="#999"
                 android:text="2023-01-01 12:00" />
 
-            <!-- Like Section & Comments Header -->
+            <!-- Comments Header -->
             <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -164,34 +165,6 @@
                     android:textSize="16sp"
                     android:textStyle="bold"
                     android:layout_centerVertical="true"/>
-
-                <LinearLayout
-                    android:id="@+id/llPostLike"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_alignParentEnd="true"
-                    android:gravity="center_vertical"
-                    android:background="?attr/selectableItemBackground"
-                    android:minHeight="@dimen/tap_min_size"
-                    android:minWidth="@dimen/tap_min_size"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:paddingHorizontal="8dp"
-                    android:paddingVertical="4dp">
-
-                    <ImageView
-                        android:id="@+id/ivPostLike"
-                        android:layout_width="@dimen/icon_size"
-                        android:layout_height="@dimen/icon_size"
-                        android:src="@drawable/ic_like"/>
-
-                    <TextView
-                        android:id="@+id/tvPostLikeCount"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="0"
-                        android:layout_marginStart="4dp"/>
-                </LinearLayout>
             </RelativeLayout>
 
             <androidx.recyclerview.widget.RecyclerView
@@ -235,10 +208,70 @@
         <Button
             android:id="@+id/btnSendComment"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_height="40dp"
             android:text="发送"
-            android:backgroundTint="?attr/colorSecondary"
-            android:textColor="?attr/colorOnSecondary" />
+            android:background="@drawable/bg_follow_btn"
+            app:backgroundTint="?attr/colorSecondary"
+            android:textColor="?attr/colorOnSecondary"
+            android:layout_marginStart="8dp"/>
+
+        <!-- Moved Post Like to Bottom Bar -->
+        <LinearLayout
+            android:id="@+id/llPostLike"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:background="?attr/selectableItemBackground"
+            android:minHeight="@dimen/tap_min_size"
+            android:minWidth="@dimen/tap_min_size"
+            android:clickable="true"
+            android:focusable="true"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="4dp"
+            android:layout_marginStart="8dp">
+
+            <ImageView
+                android:id="@+id/ivPostLike"
+                android:layout_width="@dimen/icon_size"
+                android:layout_height="@dimen/icon_size"
+                android:src="@drawable/ic_like"/>
+
+            <TextView
+                android:id="@+id/tvPostLikeCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0"
+                android:layout_marginStart="4dp"/>
+        </LinearLayout>
+
+        <!-- Comment Button + Count on Bottom Bar -->
+        <LinearLayout
+            android:id="@+id/llCommentIndicator"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:background="?attr/selectableItemBackground"
+            android:minHeight="@dimen/tap_min_size"
+            android:minWidth="@dimen/tap_min_size"
+            android:clickable="true"
+            android:focusable="true"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="4dp"
+            android:layout_marginStart="8dp">
+
+            <ImageView
+                android:id="@+id/ivCommentIcon"
+                android:layout_width="@dimen/icon_size"
+                android:layout_height="@dimen/icon_size"
+                android:src="@drawable/ic_comment"/>
+
+            <TextView
+                android:id="@+id/tvCommentCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0"
+                android:layout_marginStart="4dp"/>
+        </LinearLayout>
     </LinearLayout>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

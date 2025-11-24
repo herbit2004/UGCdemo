@@ -45,6 +45,11 @@ public class PublishActivity extends AppCompatActivity {
     private TextView tvImageCount;
     private ImagePreviewAdapter adapter;
 
+    private android.view.View targetForReveal;
+    private int revealRx = -1, revealRy = -1;
+    private boolean finishingAnimRunning = false;
+    private android.view.View scrimView;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         ThemeUtils.applyTheme(this);
@@ -53,6 +58,8 @@ public class PublishActivity extends AppCompatActivity {
 
         initViews();
         publishViewModel = new ViewModelProvider(this).get(PublishViewModel.class);
+
+        applyEnterRevealIfRequested();
     }
 
     private void initViews() {
@@ -89,6 +96,131 @@ public class PublishActivity extends AppCompatActivity {
         
         updateImageCount();
     }
+
+    private void applyEnterRevealIfRequested() {
+        int cx = getIntent().getIntExtra("reveal_cx", -1);
+        int cy = getIntent().getIntExtra("reveal_cy", -1);
+        if (android.os.Build.VERSION.SDK_INT < 21 || cx <= 0 || cy <= 0) return;
+
+        final android.view.ViewGroup content = (android.view.ViewGroup) findViewById(android.R.id.content);
+        if (content == null || content.getChildCount() == 0) return;
+        final android.view.View target = content.getChildAt(0);
+
+        final int[] tloc = new int[2];
+        target.getLocationOnScreen(tloc);
+        final int rx = cx - tloc[0];
+        final int ry = cy - tloc[1];
+        targetForReveal = target;
+        revealRx = rx;
+        revealRy = ry;
+
+        getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
+        getWindow().getDecorView().setBackgroundColor(android.graphics.Color.TRANSPARENT);
+        target.setBackgroundColor(android.graphics.Color.WHITE);
+
+        scrimView = new android.view.View(this);
+        scrimView.setBackgroundColor(0xFF000000);
+        scrimView.setAlpha(0f);
+        content.addView(scrimView, new android.widget.FrameLayout.LayoutParams(
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT));
+        target.bringToFront();
+
+        target.setScaleX(0.96f);
+        target.setScaleY(0.96f);
+        target.setTranslationY(dp(16));
+        target.setVisibility(android.view.View.INVISIBLE);
+
+        target.getViewTreeObserver().addOnPreDrawListener(new android.view.ViewTreeObserver.OnPreDrawListener() {
+            @Override public boolean onPreDraw() {
+                target.getViewTreeObserver().removeOnPreDrawListener(this);
+                int w = target.getWidth();
+                int h = target.getHeight();
+                int endRadius = (int) Math.hypot(w, h);
+
+        android.animation.Animator reveal = android.view.ViewAnimationUtils.createCircularReveal(target, rx, ry, dp(24), endRadius);
+        reveal.setDuration(520);
+        reveal.setInterpolator(android.view.animation.AnimationUtils.loadInterpolator(PublishActivity.this, android.R.interpolator.fast_out_slow_in));
+
+                target.setVisibility(android.view.View.VISIBLE);
+                reveal.start();
+
+                android.animation.TimeInterpolator interpolator = android.view.animation.AnimationUtils.loadInterpolator(PublishActivity.this, android.R.interpolator.fast_out_slow_in);
+                android.animation.ObjectAnimator sx = android.animation.ObjectAnimator.ofFloat(target, "scaleX", 1f);
+                android.animation.ObjectAnimator sy = android.animation.ObjectAnimator.ofFloat(target, "scaleY", 1f);
+                android.animation.ObjectAnimator ty = android.animation.ObjectAnimator.ofFloat(target, "translationY", 0f);
+                sx.setDuration(520); sy.setDuration(520); ty.setDuration(520);
+                sx.setInterpolator(interpolator); sy.setInterpolator(interpolator); ty.setInterpolator(interpolator);
+                sx.start(); sy.start(); ty.start();
+
+                android.animation.ObjectAnimator scrimAnim = android.animation.ObjectAnimator.ofFloat(scrimView, "alpha", 0f, 0.5f);
+                scrimAnim.setDuration(520);
+                scrimAnim.setInterpolator(interpolator);
+                scrimAnim.start();
+                return true;
+            }
+        });
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (!startExitReveal()) {
+            super.onBackPressed();
+        }
+    }
+
+    @Override
+    public void finish() {
+        if (!startExitReveal()) {
+            super.finish();
+            overridePendingTransition(0, 0);
+        }
+    }
+
+    private boolean startExitReveal() {
+        if (android.os.Build.VERSION.SDK_INT < 21) return false;
+        if (targetForReveal == null || revealRx <= 0 || revealRy <= 0 || finishingAnimRunning) return false;
+        finishingAnimRunning = true;
+
+        final android.view.View target = targetForReveal;
+        int endRadius = (int) Math.hypot(target.getWidth(), target.getHeight());
+        android.animation.Animator reveal = android.view.ViewAnimationUtils.createCircularReveal(target, revealRx, revealRy, endRadius, dp(24));
+        reveal.setDuration(520);
+        android.animation.TimeInterpolator interpolator = android.view.animation.AnimationUtils.loadInterpolator(PublishActivity.this, android.R.interpolator.fast_out_slow_in);
+        reveal.setInterpolator(interpolator);
+
+        android.animation.ObjectAnimator sx = android.animation.ObjectAnimator.ofFloat(target, "scaleX", 0.96f);
+        android.animation.ObjectAnimator sy = android.animation.ObjectAnimator.ofFloat(target, "scaleY", 0.96f);
+        android.animation.ObjectAnimator ty = android.animation.ObjectAnimator.ofFloat(target, "translationY", dp(16));
+        sx.setDuration(520); sy.setDuration(520); ty.setDuration(520);
+        sx.setInterpolator(interpolator); sy.setInterpolator(interpolator); ty.setInterpolator(interpolator);
+
+        android.animation.ObjectAnimator scrimAnim = null;
+        if (scrimView != null) {
+            scrimAnim = android.animation.ObjectAnimator.ofFloat(scrimView, "alpha", scrimView.getAlpha(), 0f);
+            scrimAnim.setDuration(520);
+            scrimAnim.setInterpolator(interpolator);
+        }
+
+        android.animation.AnimatorSet set = new android.animation.AnimatorSet();
+        if (scrimAnim != null) {
+            set.playTogether(reveal, sx, sy, ty, scrimAnim);
+        } else {
+            set.playTogether(reveal, sx, sy, ty);
+        }
+        set.addListener(new android.animation.AnimatorListenerAdapter() {
+            @Override public void onAnimationEnd(android.animation.Animator animation) {
+                target.setVisibility(android.view.View.INVISIBLE);
+                PublishActivity.super.finish();
+                overridePendingTransition(0, 0);
+                finishingAnimRunning = false;
+            }
+        });
+        set.start();
+        return true;
+    }
+
+    private float dp(int v) { return v * getResources().getDisplayMetrics().density; }
 
     private void updateImageCount() {
         tvImageCount.setText(selectedImages.size() + "/" + MAX_IMAGE_COUNT);
