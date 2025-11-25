@@ -9,6 +9,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import com.bytecamp.herbit.ugcdemo.R;
+import com.bumptech.glide.Glide;
 import com.bytecamp.herbit.ugcdemo.data.model.CommentLikeCount;
 import com.bytecamp.herbit.ugcdemo.data.model.CommentWithUser;
 import com.bytecamp.herbit.ugcdemo.util.TimeUtils;
@@ -28,6 +29,7 @@ public class CommentsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
     private long currentUserId;
     private Set<Long> likedCommentIds = new HashSet<>(); // Store liked comment IDs
     private Map<Long, Integer> likeCounts = new HashMap<>(); // Store like counts
+    private Map<String, String> mentionAvatarMap = new HashMap<>();
     private OnCommentActionListener listener;
     private static final int VIEW_COMMENT = 0;
     private static final int VIEW_FOOTER = 1;
@@ -108,6 +110,11 @@ public class CommentsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
         notifyDataSetChanged();
     }
 
+    public void setMentionAvatarMap(Map<String, String> map) {
+        this.mentionAvatarMap = map != null ? map : new HashMap<>();
+        notifyDataSetChanged();
+    }
+
     @NonNull
     @Override
     public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -149,12 +156,21 @@ public class CommentsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
             }
         });
         
-        // Reply UI
         if (item.comment.reply_to_username != null) {
             holderC.tvContent.setText("回复 " + item.comment.reply_to_username + ": " + item.comment.content);
         } else {
             holderC.tvContent.setText(item.comment.content);
         }
+
+        holderC.ivMentionAvatarRootHeader.setVisibility(View.VISIBLE);
+        String authorAvatar = (item.user != null) ? item.user.avatar_path : null;
+        if (authorAvatar != null && !authorAvatar.isEmpty()) {
+            Glide.with(holder.itemView.getContext()).load(authorAvatar).circleCrop().into(holderC.ivMentionAvatarRootHeader);
+        } else {
+            Glide.with(holder.itemView.getContext()).load(R.mipmap.ic_launcher_round).circleCrop().into(holderC.ivMentionAvatarRootHeader);
+        }
+
+        if (holderC.ivMentionAvatarRoot != null) holderC.ivMentionAvatarRoot.setVisibility(View.GONE);
         
         // Time
         holderC.tvTime.setText(TimeUtils.formatTime(item.comment.comment_time));
@@ -213,6 +229,7 @@ public class CommentsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
                 LinearLayout llReplyLike = row.findViewById(R.id.llReplyLike);
                 TextView tvReplyLikeCount = row.findViewById(R.id.tvReplyLikeCount);
                 ImageView ivReplyLike = row.findViewById(R.id.ivReplyLike);
+                ImageView ivMentionAvatar = row.findViewById(R.id.ivMentionAvatar);
 
                 String author = child.user != null ? child.user.username : "";
                 String body;
@@ -220,6 +237,13 @@ public class CommentsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
                     body = author + " 回复 " + child.comment.reply_to_username + ": " + child.comment.content;
                 } else {
                     body = author + ": " + child.comment.content;
+                }
+                ivMentionAvatar.setVisibility(View.VISIBLE);
+                String authorAvatarChild = (child.user != null) ? child.user.avatar_path : null;
+                if (authorAvatarChild != null && !authorAvatarChild.isEmpty()) {
+                    Glide.with(row.getContext()).load(authorAvatarChild).circleCrop().into(ivMentionAvatar);
+                } else {
+                    Glide.with(row.getContext()).load(R.mipmap.ic_launcher_round).circleCrop().into(ivMentionAvatar);
                 }
                 tvReplyContent.setText(body);
 
@@ -272,7 +296,7 @@ public class CommentsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
 
     static class CommentViewHolder extends RecyclerView.ViewHolder {
         TextView tvAuthor, tvContent, tvBadge, tvLikeCount, tvTime;
-        ImageView ivLike;
+        ImageView ivLike, ivMentionAvatarRoot, ivMentionAvatarRootHeader;
         LinearLayout llContainer;
         LinearLayout llReplies;
         
@@ -284,6 +308,8 @@ public class CommentsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
             tvLikeCount = itemView.findViewById(R.id.tvCommentLikeCount);
             tvTime = itemView.findViewById(R.id.tvCommentTime);
             ivLike = itemView.findViewById(R.id.ivCommentLike);
+            ivMentionAvatarRoot = itemView.findViewById(R.id.ivMentionAvatarRoot);
+            ivMentionAvatarRootHeader = itemView.findViewById(R.id.ivMentionAvatarRootHeader);
             llContainer = itemView.findViewById(R.id.llCommentContainer);
             llReplies = itemView.findViewById(R.id.llReplies);
         }

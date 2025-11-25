@@ -299,6 +299,29 @@ public class DetailActivity extends AppCompatActivity {
             if (tvCommentCount != null) {
                 tvCommentCount.setText(String.valueOf(comments != null ? comments.size() : 0));
             }
+            if (comments != null && !comments.isEmpty()) {
+                java.util.Set<String> names = new java.util.HashSet<>();
+                for (com.bytecamp.herbit.ugcdemo.data.model.CommentWithUser c : comments) {
+                    if (c.comment.reply_to_username != null && !c.comment.reply_to_username.trim().isEmpty()) {
+                        names.add(c.comment.reply_to_username.trim());
+                    }
+                }
+                if (!names.isEmpty()) {
+                    com.bytecamp.herbit.ugcdemo.data.AppDatabase.databaseWriteExecutor.execute(() -> {
+                        com.bytecamp.herbit.ugcdemo.data.dao.UserDao userDao = com.bytecamp.herbit.ugcdemo.data.AppDatabase.getDatabase(getApplication()).userDao();
+                        java.util.HashMap<String, String> map = new java.util.HashMap<>();
+                        for (String n : names) {
+                            com.bytecamp.herbit.ugcdemo.data.entity.User u = userDao.findByUsername(n);
+                            if (u != null && u.avatar_path != null) {
+                                map.put(n, u.avatar_path);
+                            }
+                        }
+                        runOnUiThread(() -> commentsAdapter.setMentionAvatarMap(map));
+                    });
+                } else {
+                    commentsAdapter.setMentionAvatarMap(null);
+                }
+            }
         });
         detailViewModel.initComments(postId);
 
