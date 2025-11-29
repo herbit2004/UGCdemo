@@ -20,7 +20,10 @@ import java.util.List;
 public interface PostDao {
 
     @Insert
-    void insert(Post post);
+    long insert(Post post);
+    
+    @Query("SELECT * FROM posts WHERE post_id = :id")
+    Post getPostByIdSync(long id);
 
     /**
      * 获取所有帖子，包含统计信息（点赞数、评论数）。

@@ -16,12 +16,16 @@ import com.bytecamp.herbit.ugcdemo.data.model.CommentLikeCount;
 import com.bytecamp.herbit.ugcdemo.data.model.CommentWithUser;
 import com.bytecamp.herbit.ugcdemo.data.model.PostWithUser;
 import java.util.List;
+import com.bytecamp.herbit.ugcdemo.data.dao.NotificationDao;
+import com.bytecamp.herbit.ugcdemo.data.entity.Notification;
+import com.bytecamp.herbit.ugcdemo.data.repository.FollowRepository;
 
 public class DetailViewModel extends AndroidViewModel {
     private PostDao postDao;
     private CommentDao commentDao;
     private LikeDao likeDao;
-    private FollowDao followDao;
+    private FollowRepository followRepository;
+    private NotificationDao notificationDao;
     private MutableLiveData<java.util.List<com.bytecamp.herbit.ugcdemo.data.model.CommentWithUser>> commentsPaged = new MutableLiveData<>();
     private int pageSizeTop = 10;
     private int offsetTop = 0;
@@ -35,7 +39,8 @@ public class DetailViewModel extends AndroidViewModel {
         postDao = db.postDao();
         commentDao = db.commentDao();
         likeDao = db.likeDao();
-        followDao = db.followDao();
+        followRepository = new FollowRepository(application);
+        notificationDao = db.notificationDao();
     }
 
     public LiveData<PostWithUser> getPostById(long postId) {
@@ -93,7 +98,71 @@ public class DetailViewModel extends AndroidViewModel {
             Comment comment = new Comment(postId, authorId, content, System.currentTimeMillis());
             comment.parent_comment_id = parentCommentId;
             comment.reply_to_username = replyToUsername;
-            commentDao.insert(comment);
+            long newCommentId = commentDao.insert(comment);
+            comment.comment_id = newCommentId;
+
+            // 1. Reply Notification
+            if (replyToUsername != null) {
+                if (parentCommentId != null && parentCommentId > 0) {
+                    Comment parent = commentDao.getCommentByIdSync(parentCommentId);
+                    // ALLOW SELF NOTIFICATION as requested
+                    if (parent != null) {
+                        Notification notif = new Notification(
+                            Notification.TYPE_REPLY,
+                            parent.author_id,
+                            authorId,
+                            postId,
+                            newCommentId, // extra_id = comment_id for reply
+                            content,
+                            System.currentTimeMillis()
+                        );
+                        notificationDao.insert(notif);
+                    }
+                }
+            } else {
+                com.bytecamp.herbit.ugcdemo.data.entity.Post post = postDao.getPostByIdSync(postId);
+                // ALLOW SELF NOTIFICATION
+                if (post != null) {
+                    Notification notif = new Notification(
+                        Notification.TYPE_REPLY,
+                        post.author_id,
+                        authorId,
+                        postId,
+                        0, // extra_id = 0 for post reply
+                        content,
+                        System.currentTimeMillis()
+                    );
+                    notificationDao.insert(notif);
+                }
+            }
+            
+            // 2. Mention Notification logic
+            // We need to parse @username from content and notify them
+            java.util.regex.Pattern p = java.util.regex.Pattern.compile("@[\\u4e00-\\u9fa5\\w]+");
+            java.util.regex.Matcher m = p.matcher(content);
+            com.bytecamp.herbit.ugcdemo.data.dao.UserDao userDao = AppDatabase.getDatabase(getApplication()).userDao();
+            
+            java.util.Set<String> notifiedUsers = new java.util.HashSet<>();
+            
+            while (m.find()) {
+                String username = m.group().substring(1);
+                if (notifiedUsers.contains(username)) continue;
+                
+                com.bytecamp.herbit.ugcdemo.data.entity.User u = userDao.findByUsername(username);
+                if (u != null) {
+                    Notification mentionNotif = new Notification(
+                        Notification.TYPE_MENTION,
+                        u.user_id,
+                        authorId,
+                        postId,
+                        newCommentId, // extra_id = comment_id where mention happened
+                        content,
+                        System.currentTimeMillis()
+                    );
+                    notificationDao.insert(mentionNotif);
+                    notifiedUsers.add(username);
+                }
+            }
         });
     }
     
@@ -113,12 +182,52 @@ public class DetailViewModel extends AndroidViewModel {
         return likeDao.getCommentLikeCounts();
     }
 
-    public void toggleLike(long userId, int targetType, long targetId, boolean currentLiked) {
+    public void toggleLike(long userId, int targetType, long targetId, boolean ignoredCurrentLiked) {
         AppDatabase.databaseWriteExecutor.execute(() -> {
-            if (currentLiked) {
+            // Check actual state in DB to prevent race conditions and reliance on potentially stale UI state
+            Like existingLike = likeDao.getLikeSync(userId, targetType, targetId);
+            
+            if (existingLike != null) {
                 likeDao.delete(userId, targetType, targetId);
             } else {
                 likeDao.insert(new Like(userId, targetType, targetId, System.currentTimeMillis()));
+
+                long targetUserId = -1;
+                String preview = "";
+                long relatedId = -1;
+                long extraId = 0;
+
+                if (targetType == 0) { // Post
+                    com.bytecamp.herbit.ugcdemo.data.entity.Post post = postDao.getPostByIdSync(targetId);
+                    if (post != null) {
+                        targetUserId = post.author_id;
+                        preview = post.title;
+                        relatedId = targetId;
+                        extraId = 0;
+                    }
+                } else { // Comment
+                    Comment comment = commentDao.getCommentByIdSync(targetId);
+                    if (comment != null) {
+                        targetUserId = comment.author_id;
+                        preview = comment.content;
+                        relatedId = comment.post_id;
+                        extraId = targetId; // comment_id
+                    }
+                }
+
+                // ALLOW SELF NOTIFICATION
+                if (targetUserId != -1) {
+                    Notification notif = new Notification(
+                        Notification.TYPE_LIKE,
+                        targetUserId,
+                        userId,
+                        relatedId,
+                        extraId,
+                        preview,
+                        System.currentTimeMillis()
+                    );
+                    notificationDao.insert(notif);
+                }
             }
         });
     }
@@ -139,16 +248,10 @@ public class DetailViewModel extends AndroidViewModel {
     }
 
     public LiveData<Integer> isFollowing(long followerId, long followeeId) {
-        return followDao.isFollowing(followerId, followeeId);
+        return followRepository.isFollowing(followerId, followeeId);
     }
 
     public void toggleFollow(long followerId, long followeeId, boolean isFollowing) {
-        AppDatabase.databaseWriteExecutor.execute(() -> {
-            if (isFollowing) {
-                followDao.deleteFollow(followerId, followeeId);
-            } else {
-                followDao.insertFollow(new Follow(followerId, followeeId, System.currentTimeMillis()));
-            }
-        });
+        followRepository.toggleFollow(followerId, followeeId);
     }
 }

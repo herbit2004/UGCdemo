@@ -54,7 +54,7 @@ public class FollowListActivity extends AppCompatActivity {
         recyclerView = findViewById(R.id.recyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         
-        adapter = new UserListAdapter((user, isFollowing) -> {
+        adapter = new UserListAdapter(currentUserId, (user, isFollowing) -> {
             if (isFollowing) {
                 viewModel.unfollow(currentUserId, user.user_id);
             } else {
@@ -89,10 +89,13 @@ public class FollowListActivity extends AppCompatActivity {
         } else {
             viewModel.getFollowerList(userId).observe(this, users -> adapter.setUsers(users));
         }
-        viewModel.getFollowingList(currentUserId).observe(this, myFollowing -> {
-            java.util.Set<Long> ids = new java.util.HashSet<>();
-            for (com.bytecamp.herbit.ugcdemo.data.entity.User u : myFollowing) ids.add(u.user_id);
-            adapter.setFollowingIds(ids);
+        viewModel.getFollowingIds(currentUserId).observe(this, ids -> {
+            java.util.Set<Long> set = new java.util.HashSet<>(ids);
+            adapter.setFollowingIds(set);
+        });
+        viewModel.getFollowerIds(currentUserId).observe(this, ids -> {
+            java.util.Set<Long> set = new java.util.HashSet<>(ids);
+            adapter.setFollowerIds(set);
         });
     }
 }

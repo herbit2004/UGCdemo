@@ -25,6 +25,9 @@ import com.bytecamp.herbit.ugcdemo.PublishActivity;
 import com.bytecamp.herbit.ugcdemo.viewmodel.HomeViewModel;
 import android.util.TypedValue;
 
+import com.bytecamp.herbit.ugcdemo.viewmodel.NotificationViewModel;
+import com.bytecamp.herbit.ugcdemo.MainActivity;
+
 /**
  * HomeFragment
  * 首页 Fragment。
@@ -32,13 +35,13 @@ import android.util.TypedValue;
 public class HomeFragment extends Fragment {
 
     private HomeViewModel homeViewModel;
+    private NotificationViewModel notificationViewModel;
     private ViewPager2 viewPager;
     private PostsAdapter adapterHome;
     private PostsAdapter adapterFollow;
     
     private TextView tvTabHome, tvTabFollow;
-    private ImageView ivSort, ivSearch;
-    private PopupMenu sortPopup;
+    private ImageView ivSearch;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -55,8 +58,14 @@ public class HomeFragment extends Fragment {
         
         tvTabHome = root.findViewById(R.id.tvTabHome);
         tvTabFollow = root.findViewById(R.id.tvTabFollow);
-        ivSort = root.findViewById(R.id.ivSort);
         ivSearch = root.findViewById(R.id.ivSearch);
+        
+        View flNotification = root.findViewById(R.id.flNotification);
+        flNotification.setOnClickListener(v -> {
+             if (getActivity() instanceof MainActivity) {
+                 ((MainActivity) getActivity()).openDrawer();
+             }
+        });
         
         adapterHome = new PostsAdapter();
         adapterFollow = new PostsAdapter();
@@ -97,8 +106,6 @@ public class HomeFragment extends Fragment {
         tvTabHome.setOnClickListener(v -> viewPager.setCurrentItem(0, true));
         tvTabFollow.setOnClickListener(v -> viewPager.setCurrentItem(1, true));
         
-        ivSort.setOnClickListener(this::showSortMenu);
-        
         ivSearch.setOnClickListener(v -> {
             startActivity(new Intent(getActivity(), SearchActivity.class));
         });
@@ -106,6 +113,7 @@ public class HomeFragment extends Fragment {
 
     private void setupViewModel() {
         homeViewModel = new ViewModelProvider(this).get(HomeViewModel.class);
+        notificationViewModel = new ViewModelProvider(requireActivity()).get(NotificationViewModel.class);
         
         homeViewModel.getHomePosts().observe(getViewLifecycleOwner(), posts -> {
             adapterHome.setPosts(posts);
@@ -118,16 +126,13 @@ public class HomeFragment extends Fragment {
             adapterFollow.setHasMore(homeViewModel.hasMore(1));
         });
         
-        // Remove UI updates from tab LiveData to avoid double animations
-        
-        // Observe Sort changes to update UI high light
-        homeViewModel.getCurrentSortLiveData().observe(getViewLifecycleOwner(), sort -> {
-            // Use clear color filter to show original black icon instead of tinting it
-            if (sort == 0) {
-                ivSort.clearColorFilter();
-            } else {
-                int activeColor = getAttrColor(requireContext(), com.google.android.material.R.attr.colorSecondary);
-                ivSort.setColorFilter(activeColor);
+        notificationViewModel.getTotalUnreadCount().observe(getViewLifecycleOwner(), count -> {
+            View root = getView();
+            if (root != null) {
+                View vDot = root.findViewById(R.id.vNotificationDot);
+                if (vDot != null) {
+                    vDot.setVisibility(count != null && count > 0 ? View.VISIBLE : View.GONE);
+                }
             }
         });
 
@@ -174,39 +179,20 @@ public class HomeFragment extends Fragment {
         return Color.argb(a, r, g, b);
     }
 
-    private void showSortMenu(View v) {
-        sortPopup = new PopupMenu(getContext(), v);
-        Menu menu = sortPopup.getMenu();
-
-        MenuItem itemRecent = menu.add(0, 0, 0, "最近发表");
-        MenuItem itemPopular = menu.add(0, 1, 1, "最多喜欢");
-        MenuItem itemComment = menu.add(0, 2, 2, "最近评论");
-
-        int currentSort = homeViewModel.getCurrentSort();
-        int secondary = getAttrColor(requireContext(), com.google.android.material.R.attr.colorSecondary);
-
-        android.text.SpannableString sRecent = new android.text.SpannableString("最近发表");
-        android.text.SpannableString sPopular = new android.text.SpannableString("最多喜欢");
-        android.text.SpannableString sComment = new android.text.SpannableString("最近评论");
-
-        if (currentSort == 0) sRecent.setSpan(new android.text.style.ForegroundColorSpan(secondary), 0, sRecent.length(), android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        else if (currentSort == 1) sPopular.setSpan(new android.text.style.ForegroundColorSpan(secondary), 0, sPopular.length(), android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        else if (currentSort == 2) sComment.setSpan(new android.text.style.ForegroundColorSpan(secondary), 0, sComment.length(), android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-
-        itemRecent.setTitle(sRecent);
-        itemPopular.setTitle(sPopular);
-        itemComment.setTitle(sComment);
-
-        sortPopup.setOnMenuItemClickListener(item -> {
-            homeViewModel.setSort(item.getItemId());
-            return true;
-        });
-        sortPopup.show();
-    }
-
     public void refreshCurrent() {
         if (homeViewModel != null) {
             homeViewModel.refresh();
+        }
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        android.content.SharedPreferences sp = requireContext().getSharedPreferences("ugc_prefs", android.content.Context.MODE_PRIVATE);
+        boolean need = sp.getBoolean("home_refresh_after_publish", false);
+        if (need) {
+            homeViewModel.refresh(0);
+            sp.edit().putBoolean("home_refresh_after_publish", false).apply();
         }
     }
 

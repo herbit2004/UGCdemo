@@ -37,7 +37,7 @@
                     android:text="Author"
                     android:textStyle="bold" />
 
-                <Button
+                <com.bytecamp.herbit.ugcdemo.ui.widget.FollowButton
                     android:id="@+id/btnFollow"
                     android:layout_width="60dp"
                     android:layout_height="32dp"

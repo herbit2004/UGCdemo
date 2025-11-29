@@ -3,12 +3,13 @@ package com.bytecamp.herbit.ugcdemo;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
-import android.widget.Button;
+import com.bytecamp.herbit.ugcdemo.ui.widget.FollowButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.annotation.NonNull;
+import androidx.lifecycle.LiveData;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.StaggeredGridLayoutManager;
@@ -21,6 +22,12 @@ import com.bytecamp.herbit.ugcdemo.util.ThemeUtils;
 public class UserProfileActivity extends AppCompatActivity {
     public static final String EXTRA_USER_ID = "user_id";
 
+    public static void start(android.content.Context context, long userId) {
+        Intent intent = new Intent(context, UserProfileActivity.class);
+        intent.putExtra(EXTRA_USER_ID, userId);
+        context.startActivity(intent);
+    }
+
     private UserProfileViewModel viewModel;
     private long userId;
     private long currentUserId;
@@ -28,7 +35,7 @@ public class UserProfileActivity extends AppCompatActivity {
     private ImageView ivAvatar, ivBack;
     private TextView tvUsername;
     private TextView tvPostCount, tvFollowCount, tvFanCount;
-    private Button btnFollow;
+    private FollowButton btnFollow;
     private RecyclerView recyclerView;
     private TabLayout tabLayout;
     private PostsAdapter adapter;
@@ -42,16 +49,37 @@ public class UserProfileActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_user_profile);
 
+        currentUserId = getSharedPreferences("ugc_prefs", MODE_PRIVATE).getLong("user_id", -1);
+        
         userId = getIntent().getLongExtra(EXTRA_USER_ID, -1);
-        if (userId == -1) {
+        String username = getIntent().getStringExtra("extra_username");
+
+        if (userId == -1 && username == null) {
             finish();
             return;
         }
         
-        currentUserId = getSharedPreferences("ugc_prefs", MODE_PRIVATE).getLong("user_id", -1);
-        
         initViews();
-        setupViewModel();
+        
+        viewModel = new ViewModelProvider(this).get(UserProfileViewModel.class);
+        
+        if (userId == -1 && username != null) {
+            com.bytecamp.herbit.ugcdemo.data.AppDatabase.databaseWriteExecutor.execute(() -> {
+                com.bytecamp.herbit.ugcdemo.data.dao.UserDao userDao = com.bytecamp.herbit.ugcdemo.data.AppDatabase.getDatabase(getApplication()).userDao();
+                com.bytecamp.herbit.ugcdemo.data.entity.User u = userDao.findByUsername(username);
+                if (u != null) {
+                    userId = u.user_id;
+                    runOnUiThread(this::setupViewModel);
+                } else {
+                    runOnUiThread(() -> {
+                        android.widget.Toast.makeText(this, "用户不存在", android.widget.Toast.LENGTH_SHORT).show();
+                        finish();
+                    });
+                }
+            });
+        } else {
+            setupViewModel();
+        }
     }
 
     private void initViews() {
@@ -144,7 +172,14 @@ public class UserProfileActivity extends AppCompatActivity {
     }
 
     private void setupViewModel() {
-        viewModel = new ViewModelProvider(this).get(UserProfileViewModel.class);
+        if (userId == -1) return; // Safety check
+        
+        // Check if it is self profile
+        if (userId == currentUserId) {
+            btnFollow.setVisibility(View.GONE);
+        } else {
+            btnFollow.setVisibility(View.VISIBLE);
+        }
         
         viewModel.getUser(userId).observe(this, user -> {
             if (user != null) {
@@ -168,18 +203,29 @@ public class UserProfileActivity extends AppCompatActivity {
         viewModel.getFollowingCount(userId).observe(this, count -> tvFollowCount.setText(String.valueOf(count)));
         viewModel.getFollowerCount(userId).observe(this, count -> tvFanCount.setText(String.valueOf(count)));
         
-        viewModel.isFollowing(currentUserId, userId).observe(this, count -> {
-            boolean isFollowing = count != null && count > 0;
-            updateFollowButtonState(isFollowing);
-            btnFollow.setOnClickListener(v -> viewModel.toggleFollow(currentUserId, userId, isFollowing));
+        // Observe both directions
+        LiveData<Integer> followingData = viewModel.isFollowing(currentUserId, userId);
+        LiveData<Integer> followerData = viewModel.isFollowing(userId, currentUserId);
+        
+        // Use MediatorLiveData or just simple observation if we can combine
+        // Or just observe both and update state
+        // Let's store state in fields
+        final boolean[] state = new boolean[]{false, false}; // [isFollowing, isFollower]
+        
+        followingData.observe(this, count -> {
+            state[0] = count != null && count > 0;
+            updateFollowButtonState(state[0], state[1]);
         });
+        
+        followerData.observe(this, count -> {
+            state[1] = count != null && count > 0;
+            updateFollowButtonState(state[0], state[1]);
+        });
+        
+        btnFollow.setOnClickListener(v -> viewModel.toggleFollow(currentUserId, userId, state[0]));
     }
     
-    private void updateFollowButtonState(boolean isFollowing) {
-        if (isFollowing) {
-            btnFollow.setText("已关注");
-        } else {
-            btnFollow.setText("关注");
-        }
+    private void updateFollowButtonState(boolean isFollowing, boolean isFollower) {
+        btnFollow.setState(isFollowing, isFollower);
     }
 }

@@ -4,7 +4,16 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.Spannable;
+import android.text.TextWatcher;
 import android.text.TextUtils;
+import android.text.style.ForegroundColorSpan;
+import android.view.KeyEvent;
+import android.view.View;
+import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
+import android.view.animation.AnimationUtils;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -15,19 +24,12 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import com.bytecamp.herbit.ugcdemo.ui.ImagePreviewAdapter;
+import com.bytecamp.herbit.ugcdemo.ui.UserSearchDialogFragment;
 import com.bytecamp.herbit.ugcdemo.viewmodel.PublishViewModel;
 import com.bytecamp.herbit.ugcdemo.util.ThemeUtils;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * PublishActivity
- * 发布页面。
- * 功能：
- * 1. 撰写帖子标题和正文。
- * 2. 选择图片（最多 9 张，可多选）。
- * 3. 将帖子保存至本地数据库。
- */
 public class PublishActivity extends AppCompatActivity {
 
     private static final int PICK_IMAGE_REQUEST = 1;
@@ -45,10 +47,10 @@ public class PublishActivity extends AppCompatActivity {
     private TextView tvImageCount;
     private ImagePreviewAdapter adapter;
 
-    private android.view.View targetForReveal;
+    private View targetForReveal;
     private int revealRx = -1, revealRy = -1;
     private boolean finishingAnimRunning = false;
-    private android.view.View scrimView;
+    private View scrimView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,18 +59,18 @@ public class PublishActivity extends AppCompatActivity {
         setContentView(R.layout.activity_publish);
 
         initViews();
+        setupMentionListener();
         publishViewModel = new ViewModelProvider(this).get(PublishViewModel.class);
 
         applyEnterRevealIfRequested();
     }
-
+    
     private void initViews() {
         etTitle = findViewById(R.id.etTitle);
         etContent = findViewById(R.id.etContent);
         btnPublish = findViewById(R.id.btnPublish);
         tvImageCount = findViewById(R.id.tvImageCount);
         
-        // 设置图片预览列表
         RecyclerView rvPreview = findViewById(R.id.rvImagePreview);
         rvPreview.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
         adapter = new ImagePreviewAdapter(MAX_IMAGE_COUNT, new ImagePreviewAdapter.OnImageClickListener() {
@@ -89,12 +91,91 @@ public class PublishActivity extends AppCompatActivity {
         });
         rvPreview.setAdapter(adapter);
 
-        // 移除顶部添加图片按钮，改为列表最后一项的“加号”按钮
-        
-        // 发布按钮
         btnPublish.setOnClickListener(v -> publishPost());
         
         updateImageCount();
+    }
+    
+    private void setupMentionListener() {
+        etContent.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                if (count > 0 && after == 0) {
+                    if (s instanceof Spannable) {
+                        Spannable sp = (Spannable) s;
+                        MentionSpan[] spans = sp.getSpans(start, start + count, MentionSpan.class);
+                        // We can't easily delete whole span here without complex logic
+                    }
+                }
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                if (count == 1 && s.toString().substring(start, start + 1).equals("@")) {
+                    showUserSearchDialog();
+                }
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                MentionSpan[] spans = s.getSpans(0, s.length(), MentionSpan.class);
+                for (MentionSpan span : spans) {
+                    int start = s.getSpanStart(span);
+                    int end = s.getSpanEnd(span);
+                    String text = s.toString().substring(start, end);
+                    if (!text.equals("@" + span.username + " ")) {
+                        // If content changed (e.g. space removed), remove span
+                        // Actually we added space at end.
+                        // Simple check: if text doesn't match expectation
+                         if (!text.startsWith("@" + span.username)) {
+                            s.removeSpan(span);
+                            s.removeSpan(span.colorSpan);
+                         }
+                    }
+                }
+            }
+        });
+        
+        etContent.setOnKeyListener((v, keyCode, event) -> {
+            if (keyCode == KeyEvent.KEYCODE_DEL && event.getAction() == KeyEvent.ACTION_DOWN) {
+                int selectionStart = etContent.getSelectionStart();
+                int selectionEnd = etContent.getSelectionEnd();
+                Editable text = etContent.getText();
+                MentionSpan[] spans = text.getSpans(selectionStart, selectionEnd, MentionSpan.class);
+                for (MentionSpan span : spans) {
+                    int spanStart = text.getSpanStart(span);
+                    int spanEnd = text.getSpanEnd(span);
+                    if (selectionStart > spanStart && selectionStart <= spanEnd) {
+                        text.replace(spanStart, spanEnd, "");
+                        return true;
+                    }
+                }
+            }
+            return false;
+        });
+    }
+
+    private void showUserSearchDialog() {
+        UserSearchDialogFragment dialog = new UserSearchDialogFragment();
+        dialog.setOnUserSelectedListener(user -> {
+            int start = etContent.getSelectionStart();
+            String content = etContent.getText().toString();
+            int atIndex = content.lastIndexOf("@", start - 1);
+            if (atIndex != -1) {
+                Editable editable = etContent.getText();
+                String mentionText = "@" + user.username + " ";
+                editable.replace(atIndex, start, mentionText);
+                
+                MentionSpan span = new MentionSpan(user.username);
+                int color = getResources().getColor(R.color.purple_500);
+                ForegroundColorSpan colorSpan = new ForegroundColorSpan(color);
+                span.colorSpan = colorSpan;
+                
+                editable.setSpan(span, atIndex, atIndex + mentionText.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                editable.setSpan(colorSpan, atIndex, atIndex + mentionText.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            }
+        });
+        dialog.show(getSupportFragmentManager(), "UserSearch");
     }
 
     private void applyEnterRevealIfRequested() {
@@ -102,9 +183,9 @@ public class PublishActivity extends AppCompatActivity {
         int cy = getIntent().getIntExtra("reveal_cy", -1);
         if (android.os.Build.VERSION.SDK_INT < 21 || cx <= 0 || cy <= 0) return;
 
-        final android.view.ViewGroup content = (android.view.ViewGroup) findViewById(android.R.id.content);
+        final ViewGroup content = (ViewGroup) findViewById(android.R.id.content);
         if (content == null || content.getChildCount() == 0) return;
-        final android.view.View target = content.getChildAt(0);
+        final View target = content.getChildAt(0);
 
         final int[] tloc = new int[2];
         target.getLocationOnScreen(tloc);
@@ -120,34 +201,34 @@ public class PublishActivity extends AppCompatActivity {
         getWindow().getDecorView().setBackgroundColor(android.graphics.Color.TRANSPARENT);
         target.setBackgroundColor(android.graphics.Color.WHITE);
 
-        scrimView = new android.view.View(this);
+        scrimView = new View(this);
         scrimView.setBackgroundColor(0xFF000000);
         scrimView.setAlpha(0f);
         content.addView(scrimView, new android.widget.FrameLayout.LayoutParams(
-                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
-                android.view.ViewGroup.LayoutParams.MATCH_PARENT));
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT));
         target.bringToFront();
 
         target.setScaleX(0.96f);
         target.setScaleY(0.96f);
         target.setTranslationY(dp(16));
-        target.setVisibility(android.view.View.INVISIBLE);
+        target.setVisibility(View.INVISIBLE);
 
-        target.getViewTreeObserver().addOnPreDrawListener(new android.view.ViewTreeObserver.OnPreDrawListener() {
+        target.getViewTreeObserver().addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
             @Override public boolean onPreDraw() {
                 target.getViewTreeObserver().removeOnPreDrawListener(this);
                 int w = target.getWidth();
                 int h = target.getHeight();
                 int endRadius = (int) Math.hypot(w, h);
 
-        android.animation.Animator reveal = android.view.ViewAnimationUtils.createCircularReveal(target, rx, ry, dp(24), endRadius);
-        reveal.setDuration(520);
-        reveal.setInterpolator(android.view.animation.AnimationUtils.loadInterpolator(PublishActivity.this, android.R.interpolator.fast_out_slow_in));
+                android.animation.Animator reveal = android.view.ViewAnimationUtils.createCircularReveal(target, rx, ry, dp(24), endRadius);
+                reveal.setDuration(520);
+                reveal.setInterpolator(AnimationUtils.loadInterpolator(PublishActivity.this, android.R.interpolator.fast_out_slow_in));
 
-                target.setVisibility(android.view.View.VISIBLE);
+                target.setVisibility(View.VISIBLE);
                 reveal.start();
 
-                android.animation.TimeInterpolator interpolator = android.view.animation.AnimationUtils.loadInterpolator(PublishActivity.this, android.R.interpolator.fast_out_slow_in);
+                android.animation.TimeInterpolator interpolator = AnimationUtils.loadInterpolator(PublishActivity.this, android.R.interpolator.fast_out_slow_in);
                 android.animation.ObjectAnimator sx = android.animation.ObjectAnimator.ofFloat(target, "scaleX", 1f);
                 android.animation.ObjectAnimator sy = android.animation.ObjectAnimator.ofFloat(target, "scaleY", 1f);
                 android.animation.ObjectAnimator ty = android.animation.ObjectAnimator.ofFloat(target, "translationY", 0f);
@@ -184,11 +265,11 @@ public class PublishActivity extends AppCompatActivity {
         if (targetForReveal == null || revealRx <= 0 || revealRy <= 0 || finishingAnimRunning) return false;
         finishingAnimRunning = true;
 
-        final android.view.View target = targetForReveal;
+        final View target = targetForReveal;
         int endRadius = (int) Math.hypot(target.getWidth(), target.getHeight());
         android.animation.Animator reveal = android.view.ViewAnimationUtils.createCircularReveal(target, revealRx, revealRy, endRadius, dp(24));
         reveal.setDuration(520);
-        android.animation.TimeInterpolator interpolator = android.view.animation.AnimationUtils.loadInterpolator(PublishActivity.this, android.R.interpolator.fast_out_slow_in);
+        android.animation.TimeInterpolator interpolator = AnimationUtils.loadInterpolator(PublishActivity.this, android.R.interpolator.fast_out_slow_in);
         reveal.setInterpolator(interpolator);
 
         android.animation.ObjectAnimator sx = android.animation.ObjectAnimator.ofFloat(target, "scaleX", 0.96f);
@@ -212,7 +293,7 @@ public class PublishActivity extends AppCompatActivity {
         }
         set.addListener(new android.animation.AnimatorListenerAdapter() {
             @Override public void onAnimationEnd(android.animation.Animator animation) {
-                target.setVisibility(android.view.View.INVISIBLE);
+                target.setVisibility(View.INVISIBLE);
                 PublishActivity.super.finish();
                 overridePendingTransition(0, 0);
                 finishingAnimRunning = false;
@@ -241,7 +322,6 @@ public class PublishActivity extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == PICK_IMAGE_REQUEST && resultCode == RESULT_OK && data != null) {
             if (data.getClipData() != null) {
-                 // 多选情况
                  int count = data.getClipData().getItemCount();
                  for (int i = 0; i < count; i++) {
                      if (selectedImages.size() < MAX_IMAGE_COUNT) {
@@ -251,7 +331,6 @@ public class PublishActivity extends AppCompatActivity {
                      }
                  }
              } else if (data.getData() != null) {
-                 // 单选情况
                  Uri uri = data.getData();
                  persistUriPermission(uri);
                  selectedImages.add(uri);
@@ -261,9 +340,6 @@ public class PublishActivity extends AppCompatActivity {
         }
     }
     
-    /**
-     * 获取 URI 的持久化读取权限，确保应用重启后仍能访问图片。
-     */
     private void persistUriPermission(Uri uri) {
         final int takeFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION
                 | Intent.FLAG_GRANT_WRITE_URI_PERMISSION;
@@ -283,7 +359,6 @@ public class PublishActivity extends AppCompatActivity {
             return;
         }
 
-        // 拼接图片路径
         String imagePath = "";
         if (!selectedImages.isEmpty()) {
             StringBuilder sb = new StringBuilder();
@@ -294,16 +369,18 @@ public class PublishActivity extends AppCompatActivity {
             imagePath = sb.toString();
         }
 
-        // 获取当前用户ID
         SharedPreferences prefs = getSharedPreferences("ugc_prefs", MODE_PRIVATE);
         long userId = prefs.getLong("user_id", -1);
 
-        // 执行发布
         publishViewModel.publishPost(userId, title, content, imagePath, new PublishViewModel.OnPublishListener() {
             @Override
             public void onSuccess() {
                 runOnUiThread(() -> {
                     Toast.makeText(PublishActivity.this, "发布成功", Toast.LENGTH_SHORT).show();
+                    getSharedPreferences("ugc_prefs", MODE_PRIVATE)
+                            .edit()
+                            .putBoolean("home_refresh_after_publish", true)
+                            .apply();
                     finish();
                 });
             }
@@ -313,5 +390,11 @@ public class PublishActivity extends AppCompatActivity {
                 runOnUiThread(() -> Toast.makeText(PublishActivity.this, "发布失败: " + msg, Toast.LENGTH_SHORT).show());
             }
         });
+    }
+
+    private static class MentionSpan {
+        String username;
+        ForegroundColorSpan colorSpan;
+        public MentionSpan(String username) { this.username = username; }
     }
 }

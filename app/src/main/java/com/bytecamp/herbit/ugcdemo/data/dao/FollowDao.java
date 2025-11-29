@@ -34,4 +34,10 @@ public interface FollowDao {
 
     @Query("SELECT u.* FROM users u INNER JOIN follows f ON u.user_id = f.follower_id WHERE f.followee_id = :userId")
     LiveData<List<User>> getFollowerList(long userId);
+
+    @Query("SELECT followee_id FROM follows WHERE follower_id = :userId")
+    LiveData<List<Long>> getFollowingIds(long userId);
+
+    @Query("SELECT follower_id FROM follows WHERE followee_id = :userId")
+    LiveData<List<Long>> getFollowerIds(long userId);
 }

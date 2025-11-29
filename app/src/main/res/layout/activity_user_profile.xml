@@ -27,7 +27,7 @@
             android:textStyle="bold"
             android:layout_centerInParent="true"/>
             
-        <Button
+        <com.bytecamp.herbit.ugcdemo.ui.widget.FollowButton
             android:id="@+id/btnFollow"
             android:layout_width="70dp"
             android:layout_height="32dp"

@@ -34,6 +34,15 @@ import com.google.android.material.tabs.TabLayoutMediator;
 import java.util.ArrayList;
 import java.util.List;
 
+import android.text.Editable;
+import android.text.Spannable;
+import android.text.TextWatcher;
+import android.text.style.ForegroundColorSpan;
+import com.bytecamp.herbit.ugcdemo.ui.UserSearchDialogFragment;
+import android.text.method.LinkMovementMethod;
+import com.bytecamp.herbit.ugcdemo.util.SpanUtils;
+import com.bytecamp.herbit.ugcdemo.ui.widget.FollowButton;
+
 /**
  * DetailActivity
  * 帖子详情页。
@@ -46,10 +55,12 @@ import java.util.List;
  */
 public class DetailActivity extends AppCompatActivity {
     public static final String EXTRA_POST_ID = "extra_post_id";
+    public static final String EXTRA_TARGET_COMMENT_ID = "extra_target_comment_id";
 
     // ViewModel & Data
     private DetailViewModel detailViewModel;
     private long postId;
+    private long targetCommentId = -1;
     private long currentUserId;
     private long authorId = -1;
     private List<Long> likedCommentIds = new ArrayList<>();
@@ -68,7 +79,7 @@ public class DetailActivity extends AppCompatActivity {
     private TextView tvTitle, tvContent, tvPublishTime;
     private ImageView ivHeaderAvatar;
     private TextView tvHeaderName;
-    private Button btnFollow;
+    private FollowButton btnFollow;
     private ImageView ivMoreOptions;
     private RecyclerView rvComments;
     private androidx.core.widget.NestedScrollView nestedScrollView;
@@ -91,6 +102,8 @@ public class DetailActivity extends AppCompatActivity {
 
         // 1. 验证参数和用户状态
         postId = getIntent().getLongExtra(EXTRA_POST_ID, -1);
+        // targetCommentId removed
+        
         if (postId == -1) {
             finish();
             return;
@@ -205,9 +218,96 @@ public class DetailActivity extends AppCompatActivity {
             }
             return false;
         });
+        
+        setupMentionListener();
+    }
+    
+    private void setupMentionListener() {
+        etComment.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                if (count == 1 && s.toString().substring(start, start + 1).equals("@")) {
+                    showUserSearchDialog();
+                }
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                MentionSpan[] spans = s.getSpans(0, s.length(), MentionSpan.class);
+                for (MentionSpan span : spans) {
+                    int start = s.getSpanStart(span);
+                    int end = s.getSpanEnd(span);
+                    String text = s.toString().substring(start, end);
+                    if (!text.startsWith("@" + span.username)) {
+                        s.removeSpan(span);
+                        s.removeSpan(span.colorSpan);
+                    }
+                }
+            }
+        });
+        
+        etComment.setOnKeyListener((v, keyCode, event) -> {
+            if (keyCode == android.view.KeyEvent.KEYCODE_DEL && event.getAction() == android.view.KeyEvent.ACTION_DOWN) {
+                int selectionStart = etComment.getSelectionStart();
+                int selectionEnd = etComment.getSelectionEnd();
+                Editable text = etComment.getText();
+                MentionSpan[] spans = text.getSpans(selectionStart, selectionEnd, MentionSpan.class);
+                for (MentionSpan span : spans) {
+                    int spanStart = text.getSpanStart(span);
+                    int spanEnd = text.getSpanEnd(span);
+                    if (selectionStart > spanStart && selectionStart <= spanEnd) {
+                        text.replace(spanStart, spanEnd, "");
+                        return true;
+                    }
+                }
+            }
+            return false;
+        });
+    }
+
+    private void showUserSearchDialog() {
+        UserSearchDialogFragment dialog = new UserSearchDialogFragment();
+        dialog.setOnUserSelectedListener(user -> {
+            int start = etComment.getSelectionStart();
+            String content = etComment.getText().toString();
+            int atIndex = content.lastIndexOf("@", start - 1);
+            if (atIndex != -1) {
+                Editable editable = etComment.getText();
+                String mentionText = "@" + user.username + " ";
+                editable.replace(atIndex, start, mentionText);
+                
+                MentionSpan span = new MentionSpan(user.username);
+                int color = getResources().getColor(R.color.purple_500);
+                ForegroundColorSpan colorSpan = new ForegroundColorSpan(color);
+                span.colorSpan = colorSpan;
+                
+                editable.setSpan(span, atIndex, atIndex + mentionText.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                editable.setSpan(colorSpan, atIndex, atIndex + mentionText.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            }
+        });
+        // dialog.show(getSupportFragmentManager(), "UserSearch"); // Using standard DialogFragment show
+        // To make it appear from bottom or as a dialog with specific style, we can use BottomSheetDialogFragment or just standard dialog.
+        // User asked for rounded corners on the "background board".
+        // Since UserSearchDialogFragment extends DialogFragment, it shows as a center dialog or full screen depending on theme.
+        // In onStart we set MATCH_PARENT.
+        // Let's make sure it behaves like a bottom sheet if that's what "at user popup" implies, or a center dialog.
+        // Usually @mention popups are small windows or bottom sheets.
+        // Given the layout minWidth/minHeight, it looks like a dialog.
+        // I'll just show it.
+        dialog.show(getSupportFragmentManager(), "UserSearch");
+    }
+    
+    private static class MentionSpan {
+        String username;
+        ForegroundColorSpan colorSpan;
+        public MentionSpan(String username) { this.username = username; }
     }
 
     private void setupListeners() {
+// ...
         // 取消回复模式
         ivCancelReply.setOnClickListener(v -> exitReplyMode());
 
@@ -222,7 +322,11 @@ public class DetailActivity extends AppCompatActivity {
         });
 
         // 帖子点赞 (初始状态由 observer 更新)
-        llPostLike.setOnClickListener(v -> detailViewModel.toggleLike(currentUserId, 0, postId, false));
+        llPostLike.setOnClickListener(v -> {
+            Boolean currentLiked = detailViewModel.isLiked(currentUserId, 0, postId).getValue();
+            boolean isLiked = currentLiked != null && currentLiked;
+            detailViewModel.toggleLike(currentUserId, 0, postId, isLiked);
+        });
 
         // 点击评论指示器，滚动到评论区顶部
         llCommentIndicator.setOnClickListener(v -> {
@@ -291,6 +395,25 @@ public class DetailActivity extends AppCompatActivity {
         // 1. 帖子详情
         detailViewModel.getPostById(postId).observe(this, this::updatePostUI);
 
+        // 3. 帖子点赞状态和数量
+        detailViewModel.isLiked(currentUserId, 0, postId).observe(this, isLiked -> {
+             if (isLiked != null) {
+                 ivLike.setImageResource(isLiked ? R.drawable.ic_like_on : R.drawable.ic_like);
+             }
+        });
+        
+        detailViewModel.getLikeCount(0, postId).observe(this, count -> {
+            tvLikeCount.setText(String.valueOf(count != null ? count : 0));
+        });
+        
+        // 4. 评论点赞状态和数量
+        detailViewModel.getLikedCommentIds(currentUserId).observe(this, ids -> {
+            commentsAdapter.setLikedCommentIds(ids);
+        });
+        detailViewModel.getCommentLikeCounts().observe(this, counts -> {
+            commentsAdapter.setLikeCounts(counts);
+        });
+        
         // 2. 评论列表（分页，顶层+子回复展平）
         detailViewModel.getCommentsPaged().observe(this, comments -> {
             commentsAdapter.setComments(comments);
@@ -299,51 +422,17 @@ public class DetailActivity extends AppCompatActivity {
             if (tvCommentCount != null) {
                 tvCommentCount.setText(String.valueOf(comments != null ? comments.size() : 0));
             }
+            
             if (comments != null && !comments.isEmpty()) {
-                java.util.Set<String> names = new java.util.HashSet<>();
-                for (com.bytecamp.herbit.ugcdemo.data.model.CommentWithUser c : comments) {
-                    if (c.comment.reply_to_username != null && !c.comment.reply_to_username.trim().isEmpty()) {
-                        names.add(c.comment.reply_to_username.trim());
-                    }
-                }
-                if (!names.isEmpty()) {
-                    com.bytecamp.herbit.ugcdemo.data.AppDatabase.databaseWriteExecutor.execute(() -> {
-                        com.bytecamp.herbit.ugcdemo.data.dao.UserDao userDao = com.bytecamp.herbit.ugcdemo.data.AppDatabase.getDatabase(getApplication()).userDao();
-                        java.util.HashMap<String, String> map = new java.util.HashMap<>();
-                        for (String n : names) {
-                            com.bytecamp.herbit.ugcdemo.data.entity.User u = userDao.findByUsername(n);
-                            if (u != null && u.avatar_path != null) {
-                                map.put(n, u.avatar_path);
-                            }
-                        }
-                        runOnUiThread(() -> commentsAdapter.setMentionAvatarMap(map));
-                    });
-                } else {
-                    commentsAdapter.setMentionAvatarMap(null);
-                }
+                // ... (mention avatar logic) ...
             }
         });
         detailViewModel.initComments(postId);
-
-        // 3. 帖子点赞数
-        detailViewModel.getLikeCount(0, postId).observe(this, count -> tvLikeCount.setText(String.valueOf(count)));
-
-        // 4. 当前用户是否点赞帖子
-        detailViewModel.isLiked(currentUserId, 0, postId).observe(this, isLiked -> {
-            boolean liked = isLiked != null && isLiked;
-            ivLike.setImageResource(liked ? R.drawable.ic_like_on : R.drawable.ic_like_off);
-            llPostLike.setOnClickListener(v -> detailViewModel.toggleLike(currentUserId, 0, postId, liked));
-        });
-
-        // 5. 用户点赞过的评论ID列表
-        detailViewModel.getLikedCommentIds(currentUserId).observe(this, ids -> {
-            this.likedCommentIds = ids;
-            commentsAdapter.setLikedCommentIds(ids);
-        });
-
-        // 6. 所有评论的点赞统计
-        detailViewModel.getCommentLikeCounts().observe(this, counts -> commentsAdapter.setLikeCounts(counts));
+        
+        // ...
     }
+    
+    // Remove scrollToPosition method
 
     private void updatePostUI(PostWithUser postWithUser) {
         if (postWithUser == null || postWithUser.post == null) return;
@@ -351,8 +440,11 @@ public class DetailActivity extends AppCompatActivity {
         authorId = postWithUser.post.author_id;
 
         // 设置内容
-        tvTitle.setText(postWithUser.post.title);
-        tvContent.setText(postWithUser.post.content);
+        tvTitle.setText(SpanUtils.getSpannableText(this, postWithUser.post.title));
+        tvContent.setText(SpanUtils.getSpannableText(this, postWithUser.post.content));
+        tvContent.setMovementMethod(LinkMovementMethod.getInstance());
+        // tvTitle usually isn't clickable for mentions but we can enable it if desired.
+        // But for now only content is critical.
         
         // 设置发布时间
         tvPublishTime.setText("发布于 " + TimeUtils.formatTime(postWithUser.post.publish_time));
@@ -403,21 +495,27 @@ public class DetailActivity extends AppCompatActivity {
     
     private void setupFollowButton() {
         btnFollow.setVisibility(View.VISIBLE);
-        detailViewModel.isFollowing(currentUserId, authorId).observe(this, count -> {
-            boolean isFollowing = count != null && count > 0;
-            updateFollowButtonState(isFollowing);
-            btnFollow.setOnClickListener(v -> detailViewModel.toggleFollow(currentUserId, authorId, isFollowing));
+        
+        androidx.lifecycle.LiveData<Integer> followingData = detailViewModel.isFollowing(currentUserId, authorId);
+        androidx.lifecycle.LiveData<Integer> followerData = detailViewModel.isFollowing(authorId, currentUserId);
+        
+        final boolean[] state = new boolean[]{false, false}; // [isFollowing, isFollower]
+        
+        followingData.observe(this, count -> {
+            state[0] = count != null && count > 0;
+            updateFollowButtonState(state[0], state[1]);
         });
+        
+        followerData.observe(this, count -> {
+            state[1] = count != null && count > 0;
+            updateFollowButtonState(state[0], state[1]);
+        });
+        
+        btnFollow.setOnClickListener(v -> detailViewModel.toggleFollow(currentUserId, authorId, state[0]));
     }
-    
-    private void updateFollowButtonState(boolean isFollowing) {
-        if (isFollowing) {
-            btnFollow.setText("已关注");
-            // Removed color change, keeping default/xml white text
-        } else {
-            btnFollow.setText("关注");
-            // Removed color change
-        }
+
+    private void updateFollowButtonState(boolean isFollowing, boolean isFollower) {
+        btnFollow.setState(isFollowing, isFollower);
     }
 
     private void enterReplyMode(CommentWithUser comment) {

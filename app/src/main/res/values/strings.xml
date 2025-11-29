@@ -1,3 +1,12 @@
 <resources>
     <string name="app_name">UGCdemo</string>
+    <string name="notifications_title">通知</string>
+    <string name="label_mention">\@我的</string>
+    <string name="label_new_reply">新的回复</string>
+    <string name="label_new_like">新的点赞</string>
+    <string name="label_new_follow">新的关注</string>
+    <string name="number_zero">0</string>
+    <string name="content_desc_back">返回</string>
+    <string name="content_desc_mark_read">标记为已读</string>
+    <string name="content_desc_close">关闭</string>
 </resources>

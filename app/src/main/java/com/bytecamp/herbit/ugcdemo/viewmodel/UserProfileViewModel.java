@@ -8,15 +8,16 @@ import com.bytecamp.herbit.ugcdemo.data.AppDatabase;
 import com.bytecamp.herbit.ugcdemo.data.dao.FollowDao;
 import com.bytecamp.herbit.ugcdemo.data.dao.PostDao;
 import com.bytecamp.herbit.ugcdemo.data.dao.UserDao;
-import com.bytecamp.herbit.ugcdemo.data.entity.Follow;
+import com.bytecamp.herbit.ugcdemo.data.dao.UserDao;
 import com.bytecamp.herbit.ugcdemo.data.entity.User;
 import com.bytecamp.herbit.ugcdemo.data.model.PostCardItem;
+import com.bytecamp.herbit.ugcdemo.data.repository.FollowRepository;
 import java.util.List;
 
 public class UserProfileViewModel extends AndroidViewModel {
     private UserDao userDao;
     private PostDao postDao;
-    private FollowDao followDao;
+    private FollowRepository followRepository;
     
     private MutableLiveData<Integer> currentTab = new MutableLiveData<>(0); // 0: Posts, 1: Liked
     private MutableLiveData<List<PostCardItem>> posts = new MutableLiveData<>();
@@ -31,7 +32,7 @@ public class UserProfileViewModel extends AndroidViewModel {
         AppDatabase db = AppDatabase.getDatabase(application);
         userDao = db.userDao();
         postDao = db.postDao();
-        followDao = db.followDao();
+        followRepository = new FollowRepository(application);
     }
 
     public LiveData<User> getUser(long userId) {
@@ -92,24 +93,18 @@ public class UserProfileViewModel extends AndroidViewModel {
     }
     
     public LiveData<Integer> getFollowingCount(long userId) {
-        return followDao.getFollowingCount(userId);
+        return followRepository.getFollowingCount(userId);
     }
 
     public LiveData<Integer> getFollowerCount(long userId) {
-        return followDao.getFollowerCount(userId);
+        return followRepository.getFollowerCount(userId);
     }
     
     public LiveData<Integer> isFollowing(long followerId, long followeeId) {
-        return followDao.isFollowing(followerId, followeeId);
+        return followRepository.isFollowing(followerId, followeeId);
     }
 
     public void toggleFollow(long followerId, long followeeId, boolean isFollowing) {
-        AppDatabase.databaseWriteExecutor.execute(() -> {
-            if (isFollowing) {
-                followDao.deleteFollow(followerId, followeeId);
-            } else {
-                followDao.insertFollow(new Follow(followerId, followeeId, System.currentTimeMillis()));
-            }
-        });
+        followRepository.toggleFollow(followerId, followeeId);
     }
 }

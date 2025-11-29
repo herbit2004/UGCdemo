@@ -17,6 +17,9 @@ public interface LikeDao {
     @Query("DELETE FROM likes WHERE user_id = :userId AND target_type = :targetType AND target_id = :targetId")
     void delete(long userId, int targetType, long targetId);
 
+    @Query("SELECT * FROM likes WHERE user_id = :userId AND target_type = :targetType AND target_id = :targetId LIMIT 1")
+    Like getLikeSync(long userId, int targetType, long targetId);
+
     @Query("SELECT COUNT(*) FROM likes WHERE target_type = :targetType AND target_id = :targetId")
     LiveData<Integer> getLikeCount(int targetType, long targetId);
 

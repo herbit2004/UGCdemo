@@ -13,6 +13,8 @@ import com.bumptech.glide.Glide;
 import com.bytecamp.herbit.ugcdemo.data.model.CommentLikeCount;
 import com.bytecamp.herbit.ugcdemo.data.model.CommentWithUser;
 import com.bytecamp.herbit.ugcdemo.util.TimeUtils;
+import android.text.method.LinkMovementMethod;
+import com.bytecamp.herbit.ugcdemo.util.SpanUtils;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -149,6 +151,9 @@ public class CommentsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
         String authorName = item.user != null ? item.user.username : "Unknown";
         holderC.tvAuthor.setText(authorName);
         
+        // Target Indicator removed
+        holderC.tvAuthor.setCompoundDrawables(null, null, null, null);
+        
         // Click on author name to go to profile
         holderC.tvAuthor.setOnClickListener(v -> {
             if (listener != null) {
@@ -157,10 +162,12 @@ public class CommentsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
         });
         
         if (item.comment.reply_to_username != null) {
-            holderC.tvContent.setText("回复 " + item.comment.reply_to_username + ": " + item.comment.content);
+            String text = "回复 " + item.comment.reply_to_username + ": " + item.comment.content;
+            holderC.tvContent.setText(SpanUtils.getSpannableText(holder.itemView.getContext(), text));
         } else {
-            holderC.tvContent.setText(item.comment.content);
+            holderC.tvContent.setText(SpanUtils.getSpannableText(holder.itemView.getContext(), item.comment.content));
         }
+        holderC.tvContent.setMovementMethod(LinkMovementMethod.getInstance());
 
         holderC.ivMentionAvatarRootHeader.setVisibility(View.VISIBLE);
         String authorAvatar = (item.user != null) ? item.user.avatar_path : null;
@@ -215,6 +222,9 @@ public class CommentsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
         likeContainer.setOnClickListener(v -> {
             if (listener != null) listener.onLike(item);
         });
+        holderC.ivLike.setOnClickListener(v -> {
+            if (listener != null) listener.onLike(item);
+        });
 
         LinearLayout replies = holderC.llReplies;
         replies.removeAllViews();
@@ -245,7 +255,8 @@ public class CommentsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
                 } else {
                     Glide.with(row.getContext()).load(R.mipmap.ic_launcher_round).circleCrop().into(ivMentionAvatar);
                 }
-                tvReplyContent.setText(body);
+                tvReplyContent.setText(SpanUtils.getSpannableText(ctx, body));
+                tvReplyContent.setMovementMethod(LinkMovementMethod.getInstance());
 
                 tvReplyTime.setText(TimeUtils.formatTime(child.comment.comment_time));
 
@@ -255,6 +266,7 @@ public class CommentsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
                 ivReplyLike.setImageResource(isLikedChild ? R.drawable.ic_like_on : R.drawable.ic_like_off);
 
                 llReplyLike.setOnClickListener(v -> { if (listener != null) listener.onLike(child); });
+                ivReplyLike.setOnClickListener(v -> { if (listener != null) listener.onLike(child); });
 
                 row.setOnClickListener(v -> { if (listener != null) listener.onReply(child); });
                 row.setOnLongClickListener(v -> {

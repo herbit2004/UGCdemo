@@ -42,4 +42,7 @@ public interface UserDao {
 
     @Delete
     void delete(User user);
+
+    @Query("SELECT * FROM users WHERE username LIKE '%' || :query || '%'")
+    LiveData<java.util.List<User>> searchUsers(String query);
 }

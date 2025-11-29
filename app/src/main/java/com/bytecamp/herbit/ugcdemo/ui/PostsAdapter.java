@@ -17,8 +17,10 @@ import com.bytecamp.herbit.ugcdemo.MainActivity;
 import com.bytecamp.herbit.ugcdemo.R;
 import com.bytecamp.herbit.ugcdemo.UserProfileActivity;
 import com.bytecamp.herbit.ugcdemo.data.model.PostCardItem;
+import com.bytecamp.herbit.ugcdemo.util.SpanUtils;
 import java.util.ArrayList;
 import java.util.List;
+import android.text.method.LinkMovementMethod;
 
 /**
  * PostsAdapter
@@ -157,10 +159,11 @@ public class PostsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
 
         void bind(PostCardItem item) {
             // 1. 绑定文本内容
-            tvTitle.setText(item.post.title);
+            tvTitle.setText(SpanUtils.getSpannableText(context, item.post.title));
             tvAuthorName.setText(item.user != null ? item.user.username : "Unknown");
             tvLikeCount.setText(String.valueOf(item.likeCount));
             tvCommentCount.setText(String.valueOf(item.commentCount));
+
 
             // 2. 处理封面图显示逻辑
             String firstImagePath = extractFirstImage(item.post.image_path);

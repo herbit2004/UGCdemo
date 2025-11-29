@@ -12,7 +12,10 @@ import java.util.List;
 @Dao
 public interface CommentDao {
     @Insert
-    void insert(Comment comment);
+    long insert(Comment comment);
+
+    @Query("SELECT * FROM comments WHERE comment_id = :id")
+    Comment getCommentByIdSync(long id);
 
     @Transaction
     @Query("SELECT * FROM comments WHERE post_id = :postId ORDER BY comment_time ASC")
