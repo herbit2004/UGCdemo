@@ -68,7 +68,7 @@ public class AuthActivity extends AppCompatActivity {
                 .alpha(1f)
                 .setDuration(800)
                 .setStartDelay(100)
-                .setInterpolator(new android.view.animation.OvershootInterpolator(1.2f))
+                .setInterpolator(new android.view.animation.DecelerateInterpolator())
                 .start();
 
         tvWelcomeSubtitle.animate()
@@ -76,7 +76,7 @@ public class AuthActivity extends AppCompatActivity {
                 .alpha(1f)
                 .setDuration(800)
                 .setStartDelay(300)
-                .setInterpolator(new android.view.animation.OvershootInterpolator(1.2f))
+                .setInterpolator(new android.view.animation.DecelerateInterpolator())
                 .start();
     }
 
