@@ -86,7 +86,9 @@
             <!-- Multi-Image ViewPager or Fallback Title -->
             <FrameLayout
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content">
+                android:layout_height="wrap_content"
+                android:clipChildren="false"
+                android:clipToPadding="false">
 
                 <androidx.viewpager2.widget.ViewPager2
                     android:id="@+id/vpImages"
@@ -123,12 +125,14 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="bottom|center_horizontal"
-                    android:layout_marginBottom="8dp"
+                    android:layout_marginBottom="0dp"
                     android:background="@android:color/transparent"
                     app:tabBackground="@drawable/indicator_selector"
                     app:tabIndicatorHeight="0dp"
-                    app:tabPaddingStart="8dp"
-                    app:tabPaddingEnd="8dp"/>
+                    app:tabPaddingStart="6dp"
+                    app:tabPaddingEnd="6dp"
+                    android:clipChildren="false"
+                    android:clipToPadding="false"/>
             </FrameLayout>
 
             <TextView
