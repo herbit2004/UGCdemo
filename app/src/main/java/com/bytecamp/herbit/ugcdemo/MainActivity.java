@@ -71,6 +71,22 @@ public class MainActivity extends AppCompatActivity {
             startActivity(intent);
             overridePendingTransition(0, 0);
         });
+        
+        // Add sink animation to Publish Button
+        com.bytecamp.herbit.ugcdemo.util.AnimUtils.setScaleTouchListener(findViewById(R.id.btnPublishMain));
+
+        // Add sink animation to Bottom Navigation Items
+        // BottomNavigationView -> BottomNavigationMenuView -> BottomNavigationItemView
+        for (int i = 0; i < navView.getChildCount(); i++) {
+            View child = navView.getChildAt(i);
+            if (child instanceof android.view.ViewGroup) {
+                android.view.ViewGroup menuView = (android.view.ViewGroup) child;
+                for (int j = 0; j < menuView.getChildCount(); j++) {
+                    View itemView = menuView.getChildAt(j);
+                    com.bytecamp.herbit.ugcdemo.util.AnimUtils.setScaleTouchListener(itemView);
+                }
+            }
+        }
     }
     
     public void openNotificationMenu(View anchor) {

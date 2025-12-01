@@ -118,19 +118,19 @@ public class UserProfileActivity extends AppCompatActivity {
             float percentage = (float) Math.abs(verticalOffset) / totalScrollRange;
 
             // Accelerate fade logic
-            // Formula: map [0.6, 0.9] to [0, 1]
+            // Formula: map [0.9, 1.0] to [0, 1]
             float alpha = 0f;
-            if (percentage > 0.6f) {
-                alpha = (percentage - 0.6f) / 0.3f;
+            if (percentage > 0.9f) {
+                alpha = (percentage - 0.9f) / 0.1f;
                 if (alpha > 1f) alpha = 1f;
             }
             llToolbarProfile.setAlpha(alpha);
             
             // Fade out default title
-            // Fade out quickly at the beginning, e.g., 0 to 0.3
+            // Fade out quickly at the beginning, e.g., 0 to 0.15
             float titleAlpha = 1f;
-            if (percentage < 0.3f) {
-                titleAlpha = 1f - (percentage / 0.3f);
+            if (percentage < 0.15f) {
+                titleAlpha = 1f - (percentage / 0.15f);
             } else {
                 titleAlpha = 0f;
             }

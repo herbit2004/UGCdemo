@@ -328,6 +328,14 @@ public class DetailActivity extends AppCompatActivity {
             Boolean currentLiked = detailViewModel.isLiked(currentUserId, 0, postId).getValue();
             boolean isLiked = currentLiked != null && currentLiked;
             detailViewModel.toggleLike(currentUserId, 0, postId, isLiked);
+            
+            // Button bounce animation
+            animateLikeButton(ivPostLike);
+            
+            // Big Heart Fly-in Animation (only when LIKING, i.e. current state is false)
+            if (!isLiked) {
+                animateBigHeart();
+            }
         });
 
         // 点击评论指示器，滚动到评论区顶部
@@ -442,6 +450,86 @@ public class DetailActivity extends AppCompatActivity {
     }
     
     // Remove scrollToPosition method
+
+    private void animateLikeButton(View view) {
+        view.animate()
+            .scaleX(0.8f)
+            .scaleY(0.8f)
+            .setDuration(100)
+            .withEndAction(() -> {
+                view.animate()
+                    .scaleX(1.2f)
+                    .scaleY(1.2f)
+                    .setDuration(100)
+                    .withEndAction(() -> {
+                        view.animate()
+                            .scaleX(1.0f)
+                            .scaleY(1.0f)
+                            .setDuration(100)
+                            .start();
+                    })
+                    .start();
+            })
+            .start();
+    }
+
+    private void animateBigHeart() {
+        ImageView ivBigLike = findViewById(R.id.ivBigLikeAnim);
+        if (ivBigLike == null) return;
+        
+        // Reset state
+        ivBigLike.setVisibility(View.VISIBLE);
+        ivBigLike.setAlpha(0f);
+        ivBigLike.setScaleX(0.5f);
+        ivBigLike.setScaleY(0.5f);
+        ivBigLike.setTranslationY(500f); // Start from below
+        ivBigLike.setRotation(0f);
+        
+        // 1. Fly in and fade in
+        ivBigLike.animate()
+            .alpha(0.8f)
+            .translationY(0f)
+            .scaleX(1.2f)
+            .scaleY(1.2f)
+            .setDuration(400)
+            .setInterpolator(new android.view.animation.DecelerateInterpolator())
+            .withEndAction(() -> {
+                // 2. Wobble / Hover
+                ivBigLike.animate()
+                    .rotation(-15f)
+                    .scaleX(1.0f)
+                    .scaleY(1.0f)
+                    .setDuration(200)
+                    .withEndAction(() -> {
+                        ivBigLike.animate()
+                            .rotation(15f)
+                            .setDuration(200)
+                            .withEndAction(() -> {
+                                ivBigLike.animate()
+                                    .rotation(0f)
+                                    .setDuration(100)
+                                    .withEndAction(() -> {
+                                        // 3. Fly out and fade out
+                                        ivBigLike.animate()
+                                            .alpha(0f)
+                                            .translationY(-500f) // Fly up
+                                            .setDuration(400)
+                                            .setInterpolator(new android.view.animation.AccelerateInterpolator())
+                                            .withEndAction(() -> {
+                                                ivBigLike.setVisibility(View.INVISIBLE);
+                                                // Reset for next time
+                                                ivBigLike.setTranslationY(0f);
+                                            })
+                                            .start();
+                                    })
+                                    .start();
+                            })
+                            .start();
+                    })
+                    .start();
+            })
+            .start();
+    }
 
     private void updatePostUI(PostWithUser postWithUser) {
         if (postWithUser == null || postWithUser.post == null) return;

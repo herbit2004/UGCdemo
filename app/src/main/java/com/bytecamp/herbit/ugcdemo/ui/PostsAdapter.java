@@ -209,6 +209,7 @@ public class PostsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
             }
 
             // 4. 设置点击跳转
+            com.bytecamp.herbit.ugcdemo.util.AnimUtils.setScaleTouchListener(itemView);
             itemView.setOnClickListener(v -> {
                 Intent intent = new Intent(context, DetailActivity.class);
                 intent.putExtra(DetailActivity.EXTRA_POST_ID, item.post.post_id);

@@ -5,7 +5,7 @@
     <dimen name="space_m">12dp</dimen>
     <dimen name="space_l">16dp</dimen>
     <dimen name="space_xl">24dp</dimen>
-    <dimen name="tap_min_size">36dp</dimen>
+    <dimen name="tap_min_size">24dp</dimen>
     <dimen name="icon_size">24dp</dimen>
     <dimen name="bottom_reserved_space">96dp</dimen>
 </resources>

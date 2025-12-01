@@ -80,11 +80,11 @@ public class ProfileFragment extends Fragment {
             
             // Accelerate fade logic
             // Fade in toolbar profile when scrolling up.
-            // We want it to appear faster, e.g., start appearing at 60% scroll and be fully visible at 90%
-            // Formula: map [0.6, 0.9] to [0, 1]
+            // We want it to appear faster, e.g., start appearing at 90% scroll and be fully visible at 100%
+            // Formula: map [0.9, 1.0] to [0, 1]
             float alpha = 0f;
-            if (percentage > 0.6f) {
-                alpha = (percentage - 0.6f) / 0.3f;
+            if (percentage > 0.9f) {
+                alpha = (percentage - 0.9f) / 0.1f;
                 if (alpha > 1f) alpha = 1f;
             }
             llToolbarProfile.setAlpha(alpha);

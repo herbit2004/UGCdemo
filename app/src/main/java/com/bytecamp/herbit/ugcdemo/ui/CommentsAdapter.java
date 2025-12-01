@@ -99,9 +99,17 @@ public class CommentsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
         notifyDataSetChanged();
     }
 
+    private RecyclerView recyclerView;
+
+    @Override
+    public void onAttachedToRecyclerView(@NonNull RecyclerView recyclerView) {
+        super.onAttachedToRecyclerView(recyclerView);
+        this.recyclerView = recyclerView;
+    }
+
     public void setLikedCommentIds(List<Long> ids) {
         this.likedCommentIds = new HashSet<>(ids);
-        notifyDataSetChanged();
+        updateVisibleLikes();
     }
     
     public void setLikeCounts(List<CommentLikeCount> counts) {
@@ -109,7 +117,64 @@ public class CommentsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
         for (CommentLikeCount item : counts) {
             this.likeCounts.put(item.target_id, item.count);
         }
-        notifyDataSetChanged();
+        updateVisibleLikes();
+    }
+
+    private void updateVisibleLikes() {
+        if (recyclerView == null) return;
+        int childCount = recyclerView.getChildCount();
+        for (int i = 0; i < childCount; i++) {
+            View child = recyclerView.getChildAt(i);
+            RecyclerView.ViewHolder vh = recyclerView.getChildViewHolder(child);
+            if (vh instanceof CommentViewHolder) {
+                int pos = vh.getBindingAdapterPosition();
+                if (pos != RecyclerView.NO_POSITION && pos < rootComments.size()) {
+                    CommentWithUser item = rootComments.get(pos);
+                    updateLikeUi((CommentViewHolder) vh, item);
+                }
+            }
+        }
+    }
+
+    private void updateLikeUi(CommentViewHolder holder, CommentWithUser item) {
+        // Update root comment like
+        boolean isLiked = likedCommentIds.contains(item.comment.comment_id);
+        holder.ivLike.setImageResource(isLiked ? R.drawable.ic_like_filled : R.drawable.ic_like_outline);
+        if (isLiked) {
+            holder.ivLike.setColorFilter(android.graphics.Color.RED);
+            // Do NOT reset alpha/scale here to preserve animation if running
+        } else {
+            holder.ivLike.clearColorFilter();
+        }
+        
+        int count = likeCounts.containsKey(item.comment.comment_id) ? likeCounts.get(item.comment.comment_id) : 0;
+        holder.tvLikeCount.setText(String.valueOf(count));
+
+        // Update replies
+        List<CommentWithUser> children = childrenByRoot.get(item.comment.comment_id);
+        if (children != null && !children.isEmpty()) {
+            // llReplies contains item_comment_reply views
+            // We need to iterate them.
+            int replyCount = holder.llReplies.getChildCount();
+            for (int j = 0; j < replyCount && j < children.size(); j++) {
+                View replyView = holder.llReplies.getChildAt(j);
+                CommentWithUser child = children.get(j);
+                
+                ImageView ivReplyLike = replyView.findViewById(R.id.ivReplyLike);
+                TextView tvReplyLikeCount = replyView.findViewById(R.id.tvReplyLikeCount);
+                
+                boolean isLikedChild = likedCommentIds.contains(child.comment.comment_id);
+                ivReplyLike.setImageResource(isLikedChild ? R.drawable.ic_like_filled : R.drawable.ic_like_outline);
+                if (isLikedChild) {
+                    ivReplyLike.setColorFilter(android.graphics.Color.RED);
+                } else {
+                    ivReplyLike.clearColorFilter();
+                }
+                
+                int countChild = likeCounts.containsKey(child.comment.comment_id) ? likeCounts.get(child.comment.comment_id) : 0;
+                tvReplyLikeCount.setText(String.valueOf(countChild));
+            }
+        }
     }
 
     public void setMentionAvatarMap(Map<String, String> map) {
@@ -213,6 +278,7 @@ public class CommentsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
         holderC.tvLikeCount.setText(String.valueOf(count));
         
         // Listeners on container to avoid child interception
+        com.bytecamp.herbit.ugcdemo.util.AnimUtils.setScaleTouchListener(holderC.llContainer);
         holderC.llContainer.setOnClickListener(v -> {
             if (listener != null) listener.onReply(item);
         });
@@ -228,9 +294,11 @@ public class CommentsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
         View likeContainer = ((ViewGroup) holderC.ivLike.getParent());
         likeContainer.setOnClickListener(v -> {
             if (listener != null) listener.onLike(item);
+            animateLike(holderC.ivLike);
         });
         holderC.ivLike.setOnClickListener(v -> {
             if (listener != null) listener.onLike(item);
+            animateLike(holderC.ivLike);
         });
 
         LinearLayout replies = holderC.llReplies;
@@ -279,10 +347,17 @@ public class CommentsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
                     ivReplyLike.setAlpha(1.0f);
                 }
 
-                llReplyLike.setOnClickListener(v -> { if (listener != null) listener.onLike(child); });
-                ivReplyLike.setOnClickListener(v -> { if (listener != null) listener.onLike(child); });
+                llReplyLike.setOnClickListener(v -> { 
+                    if (listener != null) listener.onLike(child); 
+                    animateLike(ivReplyLike);
+                });
+                ivReplyLike.setOnClickListener(v -> { 
+                    if (listener != null) listener.onLike(child); 
+                    animateLike(ivReplyLike);
+                });
 
                 row.setOnClickListener(v -> { if (listener != null) listener.onReply(child); });
+                com.bytecamp.herbit.ugcdemo.util.AnimUtils.setScaleTouchListener(row);
                 row.setOnLongClickListener(v -> {
                     if (listener != null && child.comment.author_id == currentUserId) { listener.onDelete(child); return true; }
                     return false;
@@ -293,6 +368,28 @@ public class CommentsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
         }
     }
     
+    private void animateLike(View view) {
+        view.animate()
+            .scaleX(0.8f)
+            .scaleY(0.8f)
+            .setDuration(100)
+            .withEndAction(() -> {
+                view.animate()
+                    .scaleX(1.2f)
+                    .scaleY(1.2f)
+                    .setDuration(100)
+                    .withEndAction(() -> {
+                        view.animate()
+                            .scaleX(1.0f)
+                            .scaleY(1.0f)
+                            .setDuration(100)
+                            .start();
+                    })
+                    .start();
+            })
+            .start();
+    }
+
     private int dpToPx(int dp) {
         return (int) (dp * android.content.res.Resources.getSystem().getDisplayMetrics().density);
     }

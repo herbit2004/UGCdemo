@@ -293,4 +293,15 @@
         </LinearLayout>
     </LinearLayout>
 
+    <!-- Big Floating Heart Animation View -->
+    <ImageView
+        android:id="@+id/ivBigLikeAnim"
+        android:layout_width="150dp"
+        android:layout_height="150dp"
+        android:src="@drawable/ic_like_filled"
+        android:visibility="invisible"
+        android:layout_gravity="center"
+        app:tint="#FF0000"
+        android:alpha="0.0" />
+
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
