@@ -92,7 +92,7 @@
 - 通知：发布/评论解析到的被提及用户名尝试匹配用户并写入“提及”通知；匹配不到不通知但保留高亮。
 
 ## 发布流程与交互
-- 图片选择：最多 9 张，卡片化预览与计数标识，支持删除与继续添加。
+- 图片选择：最多 9 张，卡片化预览与计数标识，点击图片删除、点击加号继续添加。
 - 文本编辑：标题加粗、正文多行，输入框风格统一。
 - 发布：插入帖子与 @ 通知；返回首页自动刷新，滚动到顶部查看最新内容。
 
@@ -182,8 +182,8 @@ erDiagram
     USER ||--o{ COMMENT : writes
     COMMENT ||--o{ COMMENT : replies
     USER ||--o{ LIKE : makes
-    POST ||--o{ LIKE : likedBy (type=0)
-    COMMENT ||--o{ LIKE : likedBy (type=1)
+    POST ||--o{ LIKE : likedByPost
+    COMMENT ||--o{ LIKE : likedByComment
     USER ||--o{ FOLLOW : follows
     USER ||--o{ FOLLOW : followedBy
     USER ||--o{ NOTIFICATION : target
