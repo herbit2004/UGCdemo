@@ -308,6 +308,8 @@ public class DetailActivity extends AppCompatActivity {
         public MentionSpan(String username) { this.username = username; }
     }
 
+    private boolean isPostLiked = false;
+
     private void setupListeners() {
 // ...
         // 取消回复模式
@@ -325,17 +327,19 @@ public class DetailActivity extends AppCompatActivity {
 
         // 帖子点赞 (初始状态由 observer 更新)
         llPostLike.setOnClickListener(v -> {
-            Boolean currentLiked = detailViewModel.isLiked(currentUserId, 0, postId).getValue();
-            boolean isLiked = currentLiked != null && currentLiked;
-            detailViewModel.toggleLike(currentUserId, 0, postId, isLiked);
+            // Use local state which is synced with observer
+            detailViewModel.toggleLike(currentUserId, 0, postId, isPostLiked);
             
             // Button bounce animation
             animateLikeButton(ivPostLike);
             
             // Big Heart Fly-in Animation (only when LIKING, i.e. current state is false)
-            if (!isLiked) {
+            if (!isPostLiked) {
                 animateBigHeart();
             }
+            
+            // Optimistic update to prevent double clicks or wrong state if clicked fast
+            isPostLiked = !isPostLiked;
         });
 
         // 点击评论指示器，滚动到评论区顶部
@@ -408,6 +412,7 @@ public class DetailActivity extends AppCompatActivity {
         // 3. 帖子点赞状态和数量
         detailViewModel.isLiked(currentUserId, 0, postId).observe(this, isLiked -> {
              if (isLiked != null) {
+                 this.isPostLiked = isLiked;
                  ivPostLike.setImageResource(isLiked ? R.drawable.ic_like_filled : R.drawable.ic_like_outline);
                  if (isLiked) {
                      ivPostLike.setColorFilter(android.graphics.Color.RED);
