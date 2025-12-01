@@ -201,11 +201,25 @@ classDiagram
     class DetailActivity
     class PublishActivity
     class UserProfileActivity
+    class SearchActivity
+    class NotificationActivity
+    class ProfileFragment
+    class SettingsActivity
+    class AuthActivity
+
     class PostsAdapter
+    class CommentsAdapter
+    class NotificationAdapter
+
     class HomeViewModel
     class DetailViewModel
     class PublishViewModel
     class UserProfileViewModel
+    class SearchViewModel
+    class NotificationViewModel
+    class ProfileViewModel
+    class AuthViewModel
+
     class PostDao
     class CommentDao
     class LikeDao
@@ -213,12 +227,21 @@ classDiagram
     class NotificationDao
     class FollowRepository
     class AppDatabase
+    class ThemeUtils
 
     HomeFragment --> HomeViewModel
     DetailActivity --> DetailViewModel
     PublishActivity --> PublishViewModel
     UserProfileActivity --> UserProfileViewModel
+    SearchActivity --> SearchViewModel
+    NotificationActivity --> NotificationViewModel
+    ProfileFragment --> ProfileViewModel
+    AuthActivity --> AuthViewModel
+    SettingsActivity --> ThemeUtils
+
     HomeFragment --> PostsAdapter
+    DetailActivity --> CommentsAdapter
+    NotificationActivity --> NotificationAdapter
 
     HomeViewModel --> PostDao
     DetailViewModel --> PostDao
@@ -226,6 +249,9 @@ classDiagram
     DetailViewModel --> LikeDao
     UserProfileViewModel --> PostDao
     UserProfileViewModel --> FollowRepository
+    SearchViewModel --> PostDao
+    NotificationViewModel --> NotificationDao
+    ProfileViewModel --> PostDao
 
     FollowRepository --> FollowDao
     FollowRepository --> NotificationDao
@@ -235,6 +261,43 @@ classDiagram
     AppDatabase o--> LikeDao
     AppDatabase o--> FollowDao
     AppDatabase o--> NotificationDao
+```
+
+## Mermaid 类图（数据投影模型）
+```mermaid
+classDiagram
+    direction LR
+    class PostCardItem {
+        +Post post
+        +User user
+        +int likeCount
+        +int commentCount
+    }
+    class PostWithUser {
+        +Post post
+        +User user
+    }
+    class CommentWithUser {
+        +Comment comment
+        +User user
+    }
+    class NotificationWithUser {
+        +Notification notification
+        +User sourceUser
+    }
+    class CommentLikeCount {
+        +long target_id
+        +int count
+    }
+
+    PostCardItem --> Post
+    PostCardItem --> User
+    PostWithUser --> Post
+    PostWithUser --> User
+    CommentWithUser --> Comment
+    CommentWithUser --> User
+    NotificationWithUser --> Notification
+    NotificationWithUser --> User
 ```
 
 ## 项目文件结构目录表
