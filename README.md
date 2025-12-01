@@ -28,6 +28,18 @@
 
 ---
 
+# 构建与运行
+- 环境要求：Android Studio（2023+）、Gradle 8.x、JDK 17（随 Android Studio 安装）。
+- Android 版本：`compileSdk=34`、`targetSdk=34`、`minSdk=24`。
+- 依赖：`Room 2.6.1`、`Lifecycle 2.6.2`、`Glide 4.16.0`、`SwipeRefreshLayout 1.1.0`。
+- 运行步骤：
+  - 使用 Android Studio 打开工程根目录。
+  - 同步 Gradle 并等待依赖下载完成。
+  - 选择任意模拟器或真机（Android 7.0+），点击 Run 运行。
+  - 如需切换主题色，进入设置页操作；如需查看通知，使用首页右上角菜单。
+
+---
+
 # 已完成的项目文档
 
 ## 完成情况总览
@@ -198,6 +210,7 @@ graph LR
     Main[MainActivity]
     Home[HomeFragment]
     Detail[DetailActivity]
+    DetailComments[Comments List]
     Publish[PublishActivity]
     Search[SearchActivity]
     Notify[NotificationActivity]
@@ -215,6 +228,8 @@ graph LR
     Main -- 我的入口 --> Profile
 
     Detail -- 点击头像/昵称 --> UProfile
+    Detail -- 评论区 --> DetailComments
+    DetailComments -- 点赞/回复/展开子回复 --> DetailComments
     Notify -- 关注通知 --> UProfile
     Notify -- 回复/点赞/提及 --> Detail
 
@@ -264,6 +279,33 @@ sequenceDiagram
     FRepo->>FDAO: insert/delete
     FRepo->>NDAO: insertFollowNotification()
     VM-->>UI: 更新关注按钮状态
+
+    Note over DUI,DVM: 评论分页与子回复展平
+    participant DUI as DetailActivity
+    participant DVM as DetailViewModel
+    participant CDAO as CommentDao
+    DUI->>DVM: 加载评论（根评论分页）
+    DVM->>CDAO: queryRootComments(postId, offset, limit)
+    CDAO->>DB: SQL 查询根评论
+    DB-->>CDAO: 根评论结果集
+    DVM->>CDAO: queryChildComments(postId, parentIds)
+    CDAO->>DB: SQL 查询子回复
+    DB-->>CDAO: 子回复结果集
+    DVM-->>DUI: 展平为可展示的列表（根评论 + 子回复块）
+    DVM->>LDAO: getCommentLikeCounts(postId)
+    DVM-->>DUI: 同步每条评论的点赞状态与数量
+
+    Note over NA,NDVM: 通知点击跳转
+    participant NA as NotificationActivity
+    participant NDVM as NotificationViewModel
+    NA->>NDVM: 加载通知列表（按类型）
+    NDVM->>NDAO: queryNotifications(type)
+    NDAO->>DB: SQL 查询通知
+    DB-->>NDAO: 通知结果集
+    NA-->>NDVM: 点击通知项
+    NDVM-->>NA: 判断类型并导航
+    NA->>UProfile: FOLLOW 类型 → 跳转用户主页
+    NA->>Detail: 其他类型 → 跳转帖子详情（related_id）并定位评论（extra_id）
 ```
 
 ## 项目文件结构目录表
