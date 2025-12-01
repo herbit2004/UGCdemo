@@ -42,6 +42,8 @@ import com.bytecamp.herbit.ugcdemo.ui.UserSearchDialogFragment;
 import android.text.method.LinkMovementMethod;
 import com.bytecamp.herbit.ugcdemo.util.SpanUtils;
 import com.bytecamp.herbit.ugcdemo.ui.widget.FollowButton;
+import com.bytecamp.herbit.ugcdemo.ui.widget.CustomPopupMenu;
+import com.bytecamp.herbit.ugcdemo.ui.widget.UnifiedDialog;
 
 /**
  * DetailActivity
@@ -80,7 +82,7 @@ public class DetailActivity extends AppCompatActivity {
     private ImageView ivHeaderAvatar;
     private TextView tvHeaderName;
     private FollowButton btnFollow;
-    private ImageView ivMoreOptions;
+    private ImageView ivDeletePost;
     private RecyclerView rvComments;
     private androidx.core.widget.NestedScrollView nestedScrollView;
     private EditText etComment;
@@ -88,7 +90,7 @@ public class DetailActivity extends AppCompatActivity {
     private ImageView ivCancelReply;
     private View bottomBar;
     private LinearLayout llPostLike;
-    private ImageView ivLike;
+    private ImageView ivPostLike;
     private TextView tvLikeCount;
     private LinearLayout llCommentIndicator;
     private ImageView ivCommentIcon;
@@ -133,7 +135,7 @@ public class DetailActivity extends AppCompatActivity {
         ivHeaderAvatar = findViewById(R.id.ivHeaderAvatar);
         tvHeaderName = findViewById(R.id.tvHeaderName);
         btnFollow = findViewById(R.id.btnFollow);
-        ivMoreOptions = findViewById(R.id.ivMoreOptions);
+        ivDeletePost = findViewById(R.id.ivDeletePost);
 
         // Content
         tvTitle = findViewById(R.id.tvDetailTitle);
@@ -187,7 +189,7 @@ public class DetailActivity extends AppCompatActivity {
 
         // Post Like Area
         llPostLike = findViewById(R.id.llPostLike);
-        ivLike = findViewById(R.id.ivPostLike);
+        ivPostLike = findViewById(R.id.ivPostLike);
         tvLikeCount = findViewById(R.id.tvPostLikeCount);
 
         // Comment Indicator Area
@@ -398,7 +400,14 @@ public class DetailActivity extends AppCompatActivity {
         // 3. 帖子点赞状态和数量
         detailViewModel.isLiked(currentUserId, 0, postId).observe(this, isLiked -> {
              if (isLiked != null) {
-                 ivLike.setImageResource(isLiked ? R.drawable.ic_like_on : R.drawable.ic_like);
+                 ivPostLike.setImageResource(isLiked ? R.drawable.ic_like_filled : R.drawable.ic_like_outline);
+                 if (isLiked) {
+                     ivPostLike.setColorFilter(android.graphics.Color.RED);
+                     ivPostLike.setAlpha(1.0f);
+                 } else {
+                     ivPostLike.clearColorFilter();
+                     ivPostLike.setAlpha(1.0f);
+                 }
              }
         });
         
@@ -483,12 +492,13 @@ public class DetailActivity extends AppCompatActivity {
 
         // 处理更多菜单 (删除帖子)
         if (authorId == currentUserId) {
-            ivMoreOptions.setVisibility(View.VISIBLE);
-            ivMoreOptions.setOnClickListener(this::showPostMenu);
+            ivDeletePost.setVisibility(View.VISIBLE);
+            ivDeletePost.setOnClickListener(v -> {
+                UnifiedDialog.showConfirm(this, "删除帖子", "确定要删除这个帖子吗？", "删除", (d, w) -> detailViewModel.deletePost(postId, this::finish));
+            });
             btnFollow.setVisibility(View.GONE);
         } else {
-            ivMoreOptions.setVisibility(View.GONE);
-            // Setup Follow Button
+            ivDeletePost.setVisibility(View.GONE);
             setupFollowButton();
         }
     }
@@ -557,31 +567,8 @@ public class DetailActivity extends AppCompatActivity {
         }
     }
 
-    private void showPostMenu(View v) {
-        PopupMenu popup = new PopupMenu(this, v);
-        popup.getMenu().add("删除帖子");
-        popup.setOnMenuItemClickListener(item -> {
-            if (item.getTitle().equals("删除帖子")) {
-                new AlertDialog.Builder(this)
-                        .setTitle("删除帖子")
-                        .setMessage("确定要删除这个帖子吗？")
-                        .setPositiveButton("删除", (d, w) -> detailViewModel.deletePost(postId, this::finish))
-                        .setNegativeButton("取消", null)
-                        .show();
-                return true;
-            }
-            return false;
-        });
-        popup.show();
-    }
-
     private void showDeleteCommentDialog(CommentWithUser comment) {
-        new AlertDialog.Builder(this)
-                .setTitle("删除评论")
-                .setMessage("确定要删除这条评论吗？")
-                .setPositiveButton("删除", (d, w) -> detailViewModel.deleteComment(comment.comment.comment_id))
-                .setNegativeButton("取消", null)
-                .show();
+        UnifiedDialog.showConfirm(this, "删除评论", "确定要删除这条评论吗？", "删除", (d, w) -> detailViewModel.deleteComment(comment.comment.comment_id));
     }
     
     private void navigateToUserProfile(long targetUserId) {

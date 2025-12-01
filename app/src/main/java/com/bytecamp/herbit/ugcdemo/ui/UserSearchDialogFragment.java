@@ -42,17 +42,32 @@ public class UserSearchDialogFragment extends DialogFragment {
         if (dialog != null) {
             Window window = dialog.getWindow();
             if (window != null) {
-                // Set to transparent so margin in layout creates the "floating" effect
+                // Use the unified background drawable
+                window.setBackgroundDrawableResource(R.drawable.bg_dialog_unified);
+                // Dim amount is usually set in theme, but can be set here
+                window.setDimAmount(0.2f);
+                
+                // Layout params
+                WindowManager.LayoutParams params = window.getAttributes();
+                params.width = ViewGroup.LayoutParams.MATCH_PARENT; // Will be constrained by margin in layout if root has padding, but DialogFragment window usually matches width minus margin if not set
+                // Actually, to match "unified" look, let's make it have some margin.
+                // Standard AlertDialog has width margin.
+                // Here we can set a fixed width or match parent with padding in layout.
+                // The layout XML has padding=24dp.
+                params.height = ViewGroup.LayoutParams.WRAP_CONTENT;
+                params.gravity = android.view.Gravity.CENTER;
+                window.setAttributes(params);
+                
+                // To effectively use the padding in XML as "margin" around the dialog window content,
+                // we need the window background to be transparent OR set the background on the content view and transparent on window.
+                // BUT user wants unified style.
+                // If we set window background to bg_dialog_unified, it applies to the window.
+                // If our layout has padding, the background will be outside the padding? No.
+                // Let's look at the layout again.
+                // FrameLayout (padding 24dp) -> LinearLayout (bg_dialog_rounded).
+                // This structure effectively creates a margin (padding of FrameLayout) and the inner Linear is the "dialog".
+                // So the Window background should be TRANSPARENT.
                 window.setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
-                // Use MATCH_PARENT for width to allow margin to control width, and WRAP_CONTENT for height?
-                // User complained "not what I saw" - maybe they want a fixed size centered box?
-                // But "margin" with MATCH_PARENT works for width.
-                // For height, if we use MATCH_PARENT, it fills screen.
-                // Let's use WRAP_CONTENT for height so it doesn't take full screen if list is short, 
-                // but layout has minHeight 400dp so it will be at least that.
-                // And we need to ensure it is centered.
-                window.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-                window.setGravity(android.view.Gravity.CENTER);
             }
         }
     }

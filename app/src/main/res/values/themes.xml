@@ -71,4 +71,8 @@
         <item name="android:windowBackground">@android:color/transparent</item>
         <item name="android:windowAnimationStyle">@style/AppWindowAnimation</item>
     </style>
+
+    <style name="Theme.UGCdemo.AppBarOverlay" parent="ThemeOverlay.MaterialComponents.Light" />
+
+    <style name="Theme.UGCdemo.PopupOverlay" parent="ThemeOverlay.MaterialComponents.Light" />
 </resources>

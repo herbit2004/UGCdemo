@@ -169,7 +169,7 @@ public class UserListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
             if (user.avatar_path != null) {
                 Glide.with(itemView.getContext()).load(user.avatar_path).circleCrop().into(ivAvatar);
             } else {
-                ivAvatar.setImageResource(R.mipmap.ic_launcher_round);
+                ivAvatar.setImageResource(R.mipmap.ic_launcher);
             }
 
             boolean isFollowing = followingIds.contains(user.user_id);

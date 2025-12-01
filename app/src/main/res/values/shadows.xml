@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="shadow_color">#40000000</color> <!-- Semi-transparent black (25% opacity) -->
+    <dimen name="shadow_elevation">16dp</dimen> <!-- High elevation for blur -->
+    <dimen name="shadow_translation_z">4dp</dimen> <!-- Downward offset simulation via Z -->
+</resources>

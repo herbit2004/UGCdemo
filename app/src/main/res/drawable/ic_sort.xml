@@ -2,8 +2,16 @@
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp"
     android:height="24dp"
-    android:viewportWidth="24"
-    android:viewportHeight="24">
-    <path android:fillColor="@color/gray_900"
-        android:pathData="M3,18h6v-2H3v2z M3,13h12v-2H3v2z M3,6v2h18V6H3z"/>
+    android:viewportWidth="1024"
+    android:viewportHeight="1024">
+
+    <!-- 列表图标（三条圆角横线，与系列图标风格统一） -->
+    <path
+        android:strokeColor="@color/gray_900"
+        android:strokeWidth="80"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:strokeMiterLimit="1"
+        android:fillColor="@android:color/transparent"
+        android:pathData="M280 320 L744 320 M280 512 L564 512 M280 704 L384 704"/>
 </vector>

@@ -23,6 +23,7 @@ import androidx.lifecycle.ViewModelProvider;
 import com.bumptech.glide.Glide;
 import com.bytecamp.herbit.ugcdemo.viewmodel.ProfileViewModel;
 import com.bytecamp.herbit.ugcdemo.util.ThemeUtils;
+import com.bytecamp.herbit.ugcdemo.ui.widget.UnifiedDialog;
 
 public class SettingsActivity extends AppCompatActivity {
 
@@ -101,7 +102,7 @@ public class SettingsActivity extends AppCompatActivity {
                     if (user.avatar_path != null) {
                         Glide.with(this).load(user.avatar_path).circleCrop().into(ivAvatar);
                     } else {
-                        ivAvatar.setImageResource(R.mipmap.ic_launcher_round);
+                        ivAvatar.setImageResource(R.mipmap.ic_launcher);
                     }
                 }
             });
@@ -179,38 +180,29 @@ public class SettingsActivity extends AppCompatActivity {
         layout.addView(oldPass);
         layout.addView(newPass);
 
-        new AlertDialog.Builder(this)
-                .setTitle("修改密码")
-                .setView(layout)
-                .setPositiveButton("确定", (dialog, which) -> {
-                    String oldP = oldPass.getText().toString().trim();
-                    String newP = newPass.getText().toString().trim();
-                    if (!TextUtils.isEmpty(oldP) && !TextUtils.isEmpty(newP)) {
-                        profileViewModel.verifyAndUpdatePassword(userId, oldP, newP,
-                                () -> runOnUiThread(() -> Toast.makeText(this, "密码修改成功", Toast.LENGTH_SHORT).show()),
-                                () -> runOnUiThread(() -> Toast.makeText(this, "旧密码错误", Toast.LENGTH_SHORT).show())
-                        );
-                    }
-                })
-                .setNegativeButton("取消", null)
-                .show();
+        UnifiedDialog.showCustom(this, "修改密码", layout, "确定", (dialog, which) -> {
+            String oldP = oldPass.getText().toString().trim();
+            String newP = newPass.getText().toString().trim();
+            if (!TextUtils.isEmpty(oldP) && !TextUtils.isEmpty(newP)) {
+                profileViewModel.verifyAndUpdatePassword(userId, oldP, newP,
+                        () -> runOnUiThread(() -> Toast.makeText(this, "密码修改成功", Toast.LENGTH_SHORT).show()),
+                        () -> runOnUiThread(() -> Toast.makeText(this, "旧密码错误", Toast.LENGTH_SHORT).show())
+                );
+            }
+        });
     }
 
     private void showDeleteAccountDialog() {
-        new AlertDialog.Builder(this)
-                .setTitle("注销账号")
-                .setMessage("确定要注销当前账号吗？所有数据将被永久删除！")
-                .setPositiveButton("注销", (dialog, which) -> {
-                    profileViewModel.deleteUser(userId, () -> runOnUiThread(this::logout));
-                })
-                .setNegativeButton("取消", null)
-                .show();
+        UnifiedDialog.showConfirm(this, "注销账号", "确定要注销当前账号吗？所有数据将被永久删除！", "注销", (dialog, which) -> {
+            profileViewModel.deleteUser(userId, () -> runOnUiThread(this::logout));
+        });
     }
 
     private void logout() {
         SharedPreferences prefs = getSharedPreferences("ugc_prefs", Context.MODE_PRIVATE);
         prefs.edit().clear().apply();
-        startActivity(new Intent(this, AuthActivity.class));
-        finish();
+        Intent intent = new Intent(this, AuthActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
     }
 }

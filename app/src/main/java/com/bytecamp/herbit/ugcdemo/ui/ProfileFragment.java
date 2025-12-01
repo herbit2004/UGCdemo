@@ -27,6 +27,7 @@ import com.bytecamp.herbit.ugcdemo.FollowListActivity;
 import com.bytecamp.herbit.ugcdemo.R;
 import com.bytecamp.herbit.ugcdemo.PublishActivity;
 import com.bytecamp.herbit.ugcdemo.viewmodel.ProfileViewModel;
+import com.google.android.material.appbar.AppBarLayout;
 import com.google.android.material.tabs.TabLayout;
 
 public class ProfileFragment extends Fragment {
@@ -42,7 +43,11 @@ public class ProfileFragment extends Fragment {
     private TabLayout tabLayout;
     private androidx.swiperefreshlayout.widget.SwipeRefreshLayout swipeRefresh;
 
-    
+    // Toolbar views
+    private ImageView ivToolbarAvatar;
+    private TextView tvToolbarName;
+    private LinearLayout llToolbarProfile;
+    private AppBarLayout appBarLayout;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -59,6 +64,36 @@ public class ProfileFragment extends Fragment {
         tvFollowCount = root.findViewById(R.id.tvFollowCount);
         tvFanCount = root.findViewById(R.id.tvFanCount);
         tabLayout = root.findViewById(R.id.tabLayout);
+
+        // Toolbar Views
+        ivToolbarAvatar = root.findViewById(R.id.ivToolbarAvatar);
+        tvToolbarName = root.findViewById(R.id.tvToolbarName);
+        llToolbarProfile = root.findViewById(R.id.llToolbarProfile);
+        appBarLayout = root.findViewById(R.id.appBarLayout);
+
+        // Setup AppBar Listener for animation
+        appBarLayout.addOnOffsetChangedListener((appBarLayout, verticalOffset) -> {
+            int totalScrollRange = appBarLayout.getTotalScrollRange();
+            if (totalScrollRange == 0) return;
+            
+            float percentage = (float) Math.abs(verticalOffset) / totalScrollRange;
+            
+            // Accelerate fade logic
+            // Fade in toolbar profile when scrolling up.
+            // We want it to appear faster, e.g., start appearing at 60% scroll and be fully visible at 90%
+            // Formula: map [0.6, 0.9] to [0, 1]
+            float alpha = 0f;
+            if (percentage > 0.6f) {
+                alpha = (percentage - 0.6f) / 0.3f;
+                if (alpha > 1f) alpha = 1f;
+            }
+            llToolbarProfile.setAlpha(alpha);
+            
+            // Optional: Fade out large profile content slightly earlier if needed, 
+            // but parallax handles the movement. 
+            // Note: We are NOT fading out the main content because it contains stats 
+            // which should just scroll off.
+        });
 
         // Setup RecyclerView
         recyclerView.setLayoutManager(new StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL));
@@ -81,10 +116,14 @@ public class ProfileFragment extends Fragment {
             profileViewModel.getUser(userId).observe(getViewLifecycleOwner(), user -> {
                 if (user != null) {
                     tvUsername.setText(user.username);
+                    tvToolbarName.setText(user.username);
+                    
                     if (user.avatar_path != null) {
                          Glide.with(this).load(user.avatar_path).circleCrop().into(ivAvatar);
+                         Glide.with(this).load(user.avatar_path).circleCrop().into(ivToolbarAvatar);
                     } else {
-                        ivAvatar.setImageResource(R.mipmap.ic_launcher_round);
+                        ivAvatar.setImageResource(R.mipmap.ic_launcher);
+                        ivToolbarAvatar.setImageResource(R.mipmap.ic_launcher);
                     }
                 }
             });

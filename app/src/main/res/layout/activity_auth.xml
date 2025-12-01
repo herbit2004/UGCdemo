@@ -5,7 +5,30 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:gravity="center"
-    android:padding="24dp">
+    android:padding="24dp"
+    android:clipChildren="false"
+    android:clipToPadding="false">
+
+    <TextView
+        android:id="@+id/tvWelcomeTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/welcome_title"
+        android:textSize="32sp"
+        android:textStyle="bold"
+        android:textColor="@color/gray_900"
+        android:layout_gravity="start"
+        android:layout_marginBottom="8dp"/>
+
+    <TextView
+        android:id="@+id/tvWelcomeSubtitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/welcome_subtitle"
+        android:textSize="16sp"
+        android:textColor="@color/gray_600"
+        android:layout_gravity="start"
+        android:layout_marginBottom="48dp"/>
 
     <EditText
         android:id="@+id/etUsername"

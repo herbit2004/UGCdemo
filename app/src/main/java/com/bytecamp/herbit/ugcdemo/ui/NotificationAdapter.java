@@ -17,7 +17,7 @@ import com.bytecamp.herbit.ugcdemo.util.TimeUtils;
 import java.util.ArrayList;
 import java.util.List;
 
-public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapter.NotificationViewHolder> {
+public class NotificationAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     private List<NotificationWithUser> items = new ArrayList<>();
     private OnItemClickListener listener;
@@ -56,21 +56,69 @@ public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapte
         notifyDataSetChanged();
     }
 
+    private static final int VIEW_ITEM = 0;
+    private static final int VIEW_FOOTER = 1;
+    
+    private int notificationType = -1;
+
+    public void setNotificationType(int type) {
+        this.notificationType = type;
+    }
+
     @NonNull
     @Override
-    public NotificationViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+    public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        if (viewType == VIEW_FOOTER) {
+            View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_list_footer, parent, false);
+            return new FooterViewHolder(v);
+        }
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_notification, parent, false);
         return new NotificationViewHolder(view);
     }
 
     @Override
-    public void onBindViewHolder(@NonNull NotificationViewHolder holder, int position) {
-        holder.bind(items.get(position));
+    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
+        if (getItemViewType(position) == VIEW_FOOTER) {
+            FooterViewHolder fh = (FooterViewHolder) holder;
+            String text = "暂无更多内容";
+            if (items.isEmpty()) {
+                switch (notificationType) {
+                    case Notification.TYPE_MENTION: text = "暂无更多@我的消息"; break;
+                    case Notification.TYPE_REPLY: text = "暂无更多回复"; break;
+                    case Notification.TYPE_LIKE: text = "暂无更多点赞"; break;
+                    case Notification.TYPE_FOLLOW: text = "暂无更多关注"; break;
+                }
+            } else {
+                switch (notificationType) {
+                    case Notification.TYPE_MENTION: text = "没有更多@我的消息了"; break;
+                    case Notification.TYPE_REPLY: text = "没有更多回复了"; break;
+                    case Notification.TYPE_LIKE: text = "没有更多点赞了"; break;
+                    case Notification.TYPE_FOLLOW: text = "没有更多关注了"; break;
+                }
+            }
+            fh.tvFooter.setText(text);
+            return;
+        }
+        ((NotificationViewHolder) holder).bind(items.get(position));
     }
 
     @Override
     public int getItemCount() {
-        return items.size();
+        return items.size() + 1; // Always show footer
+    }
+    
+    @Override
+    public int getItemViewType(int position) {
+        if (position == items.size()) return VIEW_FOOTER;
+        return VIEW_ITEM;
+    }
+    
+    static class FooterViewHolder extends RecyclerView.ViewHolder {
+        TextView tvFooter;
+        FooterViewHolder(View itemView) {
+            super(itemView);
+            tvFooter = itemView.findViewById(R.id.tvFooter);
+        }
     }
 
     class NotificationViewHolder extends RecyclerView.ViewHolder {
@@ -106,11 +154,11 @@ public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapte
                 if (item.sourceUser.avatar_path != null) {
                     Glide.with(itemView.getContext()).load(item.sourceUser.avatar_path).circleCrop().into(ivAvatar);
                 } else {
-                    ivAvatar.setImageResource(R.mipmap.ic_launcher_round);
+                    ivAvatar.setImageResource(R.mipmap.ic_launcher);
                 }
             } else {
                 tvName.setText("Unknown");
-                ivAvatar.setImageResource(R.mipmap.ic_launcher_round);
+                ivAvatar.setImageResource(R.mipmap.ic_launcher);
             }
 
             switch (item.notification.type) {

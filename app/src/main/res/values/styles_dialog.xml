@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="UnifiedDialogTheme" parent="Theme.AppCompat.Light.Dialog.Alert">
+        <item name="android:windowBackground">@drawable/bg_dialog_unified</item>
+        <item name="android:backgroundDimAmount">0.2</item>
+        <item name="colorAccent">?attr/colorSecondary</item>
+        <item name="android:colorAccent">?attr/colorSecondary</item>
+        <item name="buttonBarPositiveButtonStyle">@style/UnifiedDialogButton</item>
+        <item name="buttonBarNegativeButtonStyle">@style/UnifiedDialogButton</item>
+    </style>
+
+    <style name="UnifiedDialogButton" parent="Widget.AppCompat.Button.ButtonBar.AlertDialog">
+        <item name="android:textColor">?attr/colorSecondary</item>
+    </style>
+</resources>

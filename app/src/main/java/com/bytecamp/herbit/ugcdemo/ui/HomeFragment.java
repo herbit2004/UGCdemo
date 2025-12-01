@@ -63,7 +63,7 @@ public class HomeFragment extends Fragment {
         View flNotification = root.findViewById(R.id.flNotification);
         flNotification.setOnClickListener(v -> {
              if (getActivity() instanceof MainActivity) {
-                 ((MainActivity) getActivity()).openDrawer();
+                 ((MainActivity) getActivity()).openNotificationMenu(v);
              }
         });
         

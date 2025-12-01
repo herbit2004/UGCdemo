@@ -8,18 +8,17 @@ import com.bytecamp.herbit.ugcdemo.ui.ProfileFragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.bytecamp.herbit.ugcdemo.util.ThemeUtils;
 
-import androidx.core.view.GravityCompat;
-import androidx.drawerlayout.widget.DrawerLayout;
-import androidx.lifecycle.ViewModelProvider;
-import android.view.View;
-import android.widget.TextView;
+import com.bytecamp.herbit.ugcdemo.ui.widget.CustomPopupMenu;
 import com.bytecamp.herbit.ugcdemo.data.entity.Notification;
 import com.bytecamp.herbit.ugcdemo.viewmodel.NotificationViewModel;
+import android.view.View;
+import android.widget.TextView;
+import androidx.lifecycle.ViewModelProvider;
 
 public class MainActivity extends AppCompatActivity {
 
-    private DrawerLayout drawerLayout;
     private NotificationViewModel notificationViewModel;
+    private CustomPopupMenu notificationMenu;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -27,8 +26,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         
-        drawerLayout = findViewById(R.id.drawer_layout);
-        setupDrawer();
+        setupNotificationMenu();
 
         BottomNavigationView navView = findViewById(R.id.nav_view);
         
@@ -75,59 +73,39 @@ public class MainActivity extends AppCompatActivity {
         });
     }
     
-    public void openDrawer() {
-        if (drawerLayout != null) {
-            drawerLayout.openDrawer(GravityCompat.START);
+    public void openNotificationMenu(View anchor) {
+        if (notificationMenu != null) {
+            notificationMenu.show(anchor, 0, 20); // Offset slightly down
         }
     }
     
-    private void setupDrawer() {
+    private void setupNotificationMenu() {
         notificationViewModel = new ViewModelProvider(this).get(NotificationViewModel.class);
         
-        View drawer = findViewById(R.id.notification_drawer);
-        if (drawer == null) return;
+        notificationMenu = new CustomPopupMenu(this);
+        // Add items with IDs matching Notification types if possible, or custom IDs
+        // Notification types: MENTION=1, REPLY=2, LIKE=3, FOLLOW=4
+        notificationMenu.add(Notification.TYPE_MENTION, getString(R.string.label_mention));
+        notificationMenu.add(Notification.TYPE_REPLY, getString(R.string.label_new_reply));
+        notificationMenu.add(Notification.TYPE_LIKE, getString(R.string.label_new_like));
+        notificationMenu.add(Notification.TYPE_FOLLOW, getString(R.string.label_new_follow));
         
-        drawer.findViewById(R.id.itemMention).setOnClickListener(v -> {
-            NotificationActivity.start(this, Notification.TYPE_MENTION);
-            drawerLayout.closeDrawer(GravityCompat.START);
-        });
-        drawer.findViewById(R.id.itemReply).setOnClickListener(v -> {
-            NotificationActivity.start(this, Notification.TYPE_REPLY);
-            drawerLayout.closeDrawer(GravityCompat.START);
-        });
-        drawer.findViewById(R.id.itemLike).setOnClickListener(v -> {
-            NotificationActivity.start(this, Notification.TYPE_LIKE);
-            drawerLayout.closeDrawer(GravityCompat.START);
-        });
-        drawer.findViewById(R.id.itemFollow).setOnClickListener(v -> {
-            NotificationActivity.start(this, Notification.TYPE_FOLLOW);
-            drawerLayout.closeDrawer(GravityCompat.START);
+        notificationMenu.setOnMenuItemClickListener(item -> {
+            NotificationActivity.start(this, item.id);
         });
         
         notificationViewModel.getUnreadCount(Notification.TYPE_MENTION).observe(this, count -> {
-            updateBadge(drawer, R.id.tvCountMention, count);
+            notificationMenu.updateBadge(Notification.TYPE_MENTION, count != null ? count : 0);
         });
         notificationViewModel.getUnreadCount(Notification.TYPE_REPLY).observe(this, count -> {
-            updateBadge(drawer, R.id.tvCountReply, count);
+            notificationMenu.updateBadge(Notification.TYPE_REPLY, count != null ? count : 0);
         });
         notificationViewModel.getUnreadCount(Notification.TYPE_LIKE).observe(this, count -> {
-            updateBadge(drawer, R.id.tvCountLike, count);
+            notificationMenu.updateBadge(Notification.TYPE_LIKE, count != null ? count : 0);
         });
         notificationViewModel.getUnreadCount(Notification.TYPE_FOLLOW).observe(this, count -> {
-            updateBadge(drawer, R.id.tvCountFollow, count);
+            notificationMenu.updateBadge(Notification.TYPE_FOLLOW, count != null ? count : 0);
         });
-    }
-    
-    private void updateBadge(View root, int id, Integer count) {
-        TextView tv = root.findViewById(id);
-        if (tv != null) {
-            if (count != null && count > 0) {
-                tv.setVisibility(View.VISIBLE);
-                tv.setText(String.valueOf(count));
-            } else {
-                tv.setVisibility(View.GONE);
-            }
-        }
     }
 
     @Override

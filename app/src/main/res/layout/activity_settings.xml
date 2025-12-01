@@ -26,11 +26,11 @@
 
             <ImageView
                 android:id="@+id/ivSettingsAvatar"
-                android:layout_width="64dp"
-                android:layout_height="64dp"
-                android:src="@mipmap/ic_launcher_round"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:padding="4dp"/>
+                android:layout_width="80dp"
+                android:layout_height="80dp"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="16dp"
+                android:src="@mipmap/ic_launcher" />
 
             <LinearLayout
                 android:layout_width="0dp"
@@ -297,9 +297,20 @@
         <Button
             android:id="@+id/btnChangePassword"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="40dp"
             android:text="修改密码"
             android:layout_marginTop="16dp"
+            android:background="@drawable/bg_follow_btn"
+            android:textColor="?attr/colorOnSecondary"
+            app:backgroundTint="?attr/colorSecondary"/>
+
+
+        <Button
+            android:id="@+id/btnLogout"
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:text="退出登录"
+            android:layout_marginTop="8dp"
             android:background="@drawable/bg_follow_btn"
             android:textColor="?attr/colorOnSecondary"
             app:backgroundTint="?attr/colorSecondary"/>
@@ -307,23 +318,12 @@
         <Button
             android:id="@+id/btnDeleteAccount"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="40dp"
             android:text="注销账号"
             android:layout_marginTop="8dp"
             android:background="@drawable/bg_follow_btn"
             android:textColor="?attr/colorOnSecondary"
             app:backgroundTint="?attr/colorSecondary"/>
-
-        <Button
-            android:id="@+id/btnLogout"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="退出登录"
-            android:layout_marginTop="8dp"
-            android:background="@drawable/bg_follow_btn"
-            android:textColor="?attr/colorOnSecondary"
-            app:backgroundTint="?attr/colorSecondary"/>
-
     </LinearLayout>
 
 </ScrollView>

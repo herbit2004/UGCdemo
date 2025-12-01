@@ -18,6 +18,7 @@ import com.bytecamp.herbit.ugcdemo.ui.PostsAdapter;
 import com.bytecamp.herbit.ugcdemo.viewmodel.UserProfileViewModel;
 import com.google.android.material.tabs.TabLayout;
 import com.bytecamp.herbit.ugcdemo.util.ThemeUtils;
+import com.google.android.material.appbar.AppBarLayout;
 
 public class UserProfileActivity extends AppCompatActivity {
     public static final String EXTRA_USER_ID = "user_id";
@@ -42,6 +43,13 @@ public class UserProfileActivity extends AppCompatActivity {
     private androidx.swiperefreshlayout.widget.SwipeRefreshLayout swipeRefresh;
     
     private LinearLayout llFollowContainer, llFanContainer;
+    
+    // Toolbar views
+    private AppBarLayout appBarLayout;
+    private ImageView ivToolbarAvatar;
+    private TextView tvToolbarName;
+    private LinearLayout llToolbarProfile;
+    private TextView tvDefaultTitle;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -94,6 +102,42 @@ public class UserProfileActivity extends AppCompatActivity {
         
         llFollowContainer = findViewById(R.id.llFollowContainer);
         llFanContainer = findViewById(R.id.llFanContainer);
+
+        // Toolbar Views
+        appBarLayout = findViewById(R.id.appBarLayout);
+        ivToolbarAvatar = findViewById(R.id.ivToolbarAvatar);
+        tvToolbarName = findViewById(R.id.tvToolbarName);
+        llToolbarProfile = findViewById(R.id.llToolbarProfile);
+        tvDefaultTitle = findViewById(R.id.tvDefaultTitle);
+
+        // Setup AppBar Listener for animation
+        appBarLayout.addOnOffsetChangedListener((appBarLayout, verticalOffset) -> {
+            int totalScrollRange = appBarLayout.getTotalScrollRange();
+            if (totalScrollRange == 0) return;
+
+            float percentage = (float) Math.abs(verticalOffset) / totalScrollRange;
+
+            // Accelerate fade logic
+            // Formula: map [0.6, 0.9] to [0, 1]
+            float alpha = 0f;
+            if (percentage > 0.6f) {
+                alpha = (percentage - 0.6f) / 0.3f;
+                if (alpha > 1f) alpha = 1f;
+            }
+            llToolbarProfile.setAlpha(alpha);
+            
+            // Fade out default title
+            // Fade out quickly at the beginning, e.g., 0 to 0.3
+            float titleAlpha = 1f;
+            if (percentage < 0.3f) {
+                titleAlpha = 1f - (percentage / 0.3f);
+            } else {
+                titleAlpha = 0f;
+            }
+            if (tvDefaultTitle != null) {
+                tvDefaultTitle.setAlpha(titleAlpha);
+            }
+        });
         
         btnFollow = findViewById(R.id.btnFollow);
         if (userId == currentUserId) {
@@ -184,8 +228,14 @@ public class UserProfileActivity extends AppCompatActivity {
         viewModel.getUser(userId).observe(this, user -> {
             if (user != null) {
                 tvUsername.setText(user.username);
+                tvToolbarName.setText(user.username);
+
                 if (user.avatar_path != null) {
                     Glide.with(this).load(user.avatar_path).circleCrop().into(ivAvatar);
+                    Glide.with(this).load(user.avatar_path).circleCrop().into(ivToolbarAvatar);
+                } else {
+                    ivAvatar.setImageResource(R.mipmap.ic_launcher);
+                    ivToolbarAvatar.setImageResource(R.mipmap.ic_launcher);
                 }
             }
         });

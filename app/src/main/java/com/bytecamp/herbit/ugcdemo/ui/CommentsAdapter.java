@@ -174,7 +174,7 @@ public class CommentsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
         if (authorAvatar != null && !authorAvatar.isEmpty()) {
             Glide.with(holder.itemView.getContext()).load(authorAvatar).circleCrop().into(holderC.ivMentionAvatarRootHeader);
         } else {
-            Glide.with(holder.itemView.getContext()).load(R.mipmap.ic_launcher_round).circleCrop().into(holderC.ivMentionAvatarRootHeader);
+            Glide.with(holder.itemView.getContext()).load(R.mipmap.ic_launcher).circleCrop().into(holderC.ivMentionAvatarRootHeader);
         }
 
         if (holderC.ivMentionAvatarRoot != null) holderC.ivMentionAvatarRoot.setVisibility(View.GONE);
@@ -196,7 +196,14 @@ public class CommentsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
         
         // Like Status
         boolean isLiked = likedCommentIds.contains(item.comment.comment_id);
-        holderC.ivLike.setImageResource(isLiked ? R.drawable.ic_like_on : R.drawable.ic_like_off);
+        holderC.ivLike.setImageResource(isLiked ? R.drawable.ic_like_filled : R.drawable.ic_like_outline);
+        if (isLiked) {
+            holderC.ivLike.setColorFilter(android.graphics.Color.RED);
+            holderC.ivLike.setAlpha(1.0f);
+        } else {
+            holderC.ivLike.clearColorFilter();
+            holderC.ivLike.setAlpha(1.0f);
+        }
         
         // Like Count
         int count = 0;
@@ -253,7 +260,7 @@ public class CommentsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
                 if (authorAvatarChild != null && !authorAvatarChild.isEmpty()) {
                     Glide.with(row.getContext()).load(authorAvatarChild).circleCrop().into(ivMentionAvatar);
                 } else {
-                    Glide.with(row.getContext()).load(R.mipmap.ic_launcher_round).circleCrop().into(ivMentionAvatar);
+                    Glide.with(row.getContext()).load(R.mipmap.ic_launcher).circleCrop().into(ivMentionAvatar);
                 }
                 tvReplyContent.setText(SpanUtils.getSpannableText(ctx, body));
                 tvReplyContent.setMovementMethod(LinkMovementMethod.getInstance());
@@ -263,7 +270,14 @@ public class CommentsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
                 int countChild = likeCounts.containsKey(child.comment.comment_id) ? likeCounts.get(child.comment.comment_id) : 0;
                 tvReplyLikeCount.setText(String.valueOf(countChild));
                 boolean isLikedChild = likedCommentIds.contains(child.comment.comment_id);
-                ivReplyLike.setImageResource(isLikedChild ? R.drawable.ic_like_on : R.drawable.ic_like_off);
+                ivReplyLike.setImageResource(isLikedChild ? R.drawable.ic_like_filled : R.drawable.ic_like_outline);
+                if (isLikedChild) {
+                    ivReplyLike.setColorFilter(android.graphics.Color.RED);
+                    ivReplyLike.setAlpha(1.0f);
+                } else {
+                    ivReplyLike.clearColorFilter();
+                    ivReplyLike.setAlpha(1.0f);
+                }
 
                 llReplyLike.setOnClickListener(v -> { if (listener != null) listener.onLike(child); });
                 ivReplyLike.setOnClickListener(v -> { if (listener != null) listener.onLike(child); });
@@ -309,7 +323,7 @@ public class CommentsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
     static class CommentViewHolder extends RecyclerView.ViewHolder {
         TextView tvAuthor, tvContent, tvBadge, tvLikeCount, tvTime;
         ImageView ivLike, ivMentionAvatarRoot, ivMentionAvatarRootHeader;
-        LinearLayout llContainer;
+        View llContainer;
         LinearLayout llReplies;
         
         CommentViewHolder(View itemView) {

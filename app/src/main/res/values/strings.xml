@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">UGCdemo</string>
+    <string name="app_name">小抖书</string>
     <string name="notifications_title">通知</string>
     <string name="label_mention">\@我的</string>
     <string name="label_new_reply">新的回复</string>
@@ -9,4 +9,6 @@
     <string name="content_desc_back">返回</string>
     <string name="content_desc_mark_read">标记为已读</string>
     <string name="content_desc_close">关闭</string>
+    <string name="welcome_title">欢迎</string>
+    <string name="welcome_subtitle">记录生活，分享美好</string>
 </resources>

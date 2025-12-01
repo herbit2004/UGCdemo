@@ -19,6 +19,7 @@ public class AuthActivity extends AppCompatActivity {
     private EditText etUsername, etPassword;
     private Button btnAuth;
     private TextView tvSwitchMode;
+    private TextView tvWelcomeTitle, tvWelcomeSubtitle;
     private boolean isLoginMode = true;
 
     @Override
@@ -42,9 +43,41 @@ public class AuthActivity extends AppCompatActivity {
         etPassword = findViewById(R.id.etPassword);
         btnAuth = findViewById(R.id.btnAuth);
         tvSwitchMode = findViewById(R.id.tvSwitchMode);
+        tvWelcomeTitle = findViewById(R.id.tvWelcomeTitle);
+        tvWelcomeSubtitle = findViewById(R.id.tvWelcomeSubtitle);
 
         btnAuth.setOnClickListener(v -> handleAuth());
         tvSwitchMode.setOnClickListener(v -> toggleMode());
+        
+        startEnterAnimation();
+    }
+
+    private void startEnterAnimation() {
+        // Reduce flying distance to 150dp for a slower, more subtle effect
+        float density = getResources().getDisplayMetrics().density;
+        float distance = 150 * density;
+        
+        tvWelcomeTitle.setTranslationX(-distance);
+        tvWelcomeTitle.setAlpha(0f);
+        
+        tvWelcomeSubtitle.setTranslationX(-distance);
+        tvWelcomeSubtitle.setAlpha(0f);
+
+        tvWelcomeTitle.animate()
+                .translationX(0f)
+                .alpha(1f)
+                .setDuration(800)
+                .setStartDelay(100)
+                .setInterpolator(new android.view.animation.OvershootInterpolator(1.2f))
+                .start();
+
+        tvWelcomeSubtitle.animate()
+                .translationX(0f)
+                .alpha(1f)
+                .setDuration(800)
+                .setStartDelay(300)
+                .setInterpolator(new android.view.animation.OvershootInterpolator(1.2f))
+                .start();
     }
 
     private void toggleMode() {

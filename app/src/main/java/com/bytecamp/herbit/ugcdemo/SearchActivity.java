@@ -7,7 +7,7 @@ import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
 import android.widget.ImageView;
-import android.widget.PopupMenu;
+import com.bytecamp.herbit.ugcdemo.ui.widget.CustomPopupMenu;
 import android.widget.TextView;
 import android.util.TypedValue;
 import androidx.appcompat.app.AppCompatActivity;
@@ -24,6 +24,7 @@ import com.bytecamp.herbit.ugcdemo.util.ThemeUtils;
 public class SearchActivity extends AppCompatActivity {
 
     private SearchViewModel viewModel;
+    private CustomPopupMenu sortMenu;
     private EditText etSearch;
     private ImageView ivSort;
     private ImageView ivBack;
@@ -214,28 +215,19 @@ public class SearchActivity extends AppCompatActivity {
     }
 
     private void showSortMenu(View v) {
-        PopupMenu popup = new PopupMenu(this, v);
+        if (sortMenu == null) {
+            sortMenu = new CustomPopupMenu(this);
+            sortMenu.add(0, "最近发表");
+            sortMenu.add(1, "最多喜欢");
+            sortMenu.add(2, "最近评论");
+            sortMenu.setOnMenuItemClickListener(item -> {
+                viewModel.setSort(item.id);
+                sortMenu.setChecked(item.id);
+            });
+        }
         int currentSort = viewModel.getCurrentSort();
-        int secondary = getAttrColor(com.google.android.material.R.attr.colorSecondary);
-
-        android.text.SpannableString sRecent = new android.text.SpannableString("最近发表");
-        android.text.SpannableString sPopular = new android.text.SpannableString("最多喜欢");
-        android.text.SpannableString sComment = new android.text.SpannableString("最近评论");
-
-        if (currentSort == 0) sRecent.setSpan(new android.text.style.ForegroundColorSpan(secondary), 0, sRecent.length(), android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        else if (currentSort == 1) sPopular.setSpan(new android.text.style.ForegroundColorSpan(secondary), 0, sPopular.length(), android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        else if (currentSort == 2) sComment.setSpan(new android.text.style.ForegroundColorSpan(secondary), 0, sComment.length(), android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-
-        android.view.Menu menu = popup.getMenu();
-        android.view.MenuItem itemRecent = menu.add(0, 0, 0, sRecent);
-        android.view.MenuItem itemPopular = menu.add(0, 1, 1, sPopular);
-        android.view.MenuItem itemComment = menu.add(0, 2, 2, sComment);
-        
-        popup.setOnMenuItemClickListener(item -> {
-            viewModel.setSort(item.getItemId());
-            return true;
-        });
-        popup.show();
+        sortMenu.setChecked(currentSort);
+        sortMenu.show(v, 0, 20);
     }
 
     private int getAttrColor(int attr) {

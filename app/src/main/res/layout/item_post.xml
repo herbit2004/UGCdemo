@@ -2,12 +2,15 @@
 <androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="4dp"
+    android:layout_margin="8dp"
     app:cardCornerRadius="8dp"
+    app:cardElevation="@dimen/shadow_elevation"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:foreground="@drawable/ripple_publish"
     android:clickable="true"
-    android:focusable="true">
+    android:focusable="true"
+    android:outlineAmbientShadowColor="@color/shadow_color"
+    android:outlineSpotShadowColor="@color/shadow_color">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -76,7 +79,7 @@
                 android:id="@+id/ivAuthorAvatar"
                 android:layout_width="20dp"
                 android:layout_height="20dp"
-                android:src="@mipmap/ic_launcher_round" />
+                android:src="@mipmap/ic_launcher" />
 
             <TextView
                 android:id="@+id/tvAuthorName"
@@ -97,10 +100,11 @@
                 android:layout_marginStart="4dp">
 
                 <ImageView
-                    android:layout_width="wrap_content"
+                    android:id="@+id/ivLike"
+                    android:layout_width="14dp"
                     android:layout_height="14dp"
-                    android:alpha="0.5"
-                    android:src="@drawable/ic_like" />
+                    android:src="@drawable/ic_like_filled"
+                    app:tint="#D3D3D3" />
                 <TextView
                     android:id="@+id/tvLikeCount"
                     android:layout_width="wrap_content"
@@ -119,10 +123,10 @@
                 android:layout_marginStart="4dp">
 
                 <ImageView
-                    android:layout_width="wrap_content"
+                    android:layout_width="14dp"
                     android:layout_height="14dp"
-                    android:alpha="0.5"
-                    android:src="@drawable/ic_comment" />
+                    android:src="@drawable/ic_comment_filled"
+                    app:tint="#D3D3D3" />
                 <TextView
                     android:id="@+id/tvCommentCount"
                     android:layout_width="wrap_content"

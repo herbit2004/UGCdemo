@@ -62,6 +62,7 @@ public class NotificationActivity extends AppCompatActivity {
         RecyclerView recyclerView = findViewById(R.id.recyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         adapter = new NotificationAdapter();
+        adapter.setNotificationType(type);
         adapter.setOnItemClickListener(item -> {
             viewModel.markAsRead(item.notification.id);
             if (item.notification.type == Notification.TYPE_FOLLOW) {

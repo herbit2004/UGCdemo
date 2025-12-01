@@ -36,6 +36,7 @@ public class PostsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
     private boolean hasMore = true;
     private String emptyText = "暂无内容";
     private OnEmptyActionListener emptyActionListener;
+    private int lastAnimatedPosition = -1;
 
     /**
      * 更新帖子列表数据
@@ -43,6 +44,7 @@ public class PostsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
      */
     public void setPosts(List<PostCardItem> posts) {
         this.posts = posts;
+        lastAnimatedPosition = -1; // Reset animation for new data
         notifyDataSetChanged();
     }
 
@@ -102,6 +104,28 @@ public class PostsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
         } else {
             PostViewHolder ph = (PostViewHolder) holder;
             ph.bind(posts.get(position));
+            setAnimation(ph.itemView, position);
+        }
+    }
+
+    private void setAnimation(View viewToAnimate, int position) {
+        if (position > lastAnimatedPosition) {
+            viewToAnimate.setAlpha(0f);
+            viewToAnimate.setTranslationY(150); // Small amplitude
+            
+            // Use modulo 4 to create a cascading wave effect from top to bottom
+            // This prevents the "left column fast, right column slow" issue
+            long delay = (position % 4) * 50L; 
+            
+            viewToAnimate.animate()
+                .alpha(1f)
+                .translationY(0f)
+                .setDuration(300) // Faster duration
+                .setStartDelay(delay)
+                .setInterpolator(new android.view.animation.DecelerateInterpolator())
+                .start();
+                
+            lastAnimatedPosition = position;
         }
     }
 
@@ -181,7 +205,7 @@ public class PostsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
                         .circleCrop()
                         .into(ivAuthorAvatar);
             } else {
-                ivAuthorAvatar.setImageResource(R.mipmap.ic_launcher_round);
+                ivAuthorAvatar.setImageResource(R.mipmap.ic_launcher);
             }
 
             // 4. 设置点击跳转
