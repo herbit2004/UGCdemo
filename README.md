@@ -125,179 +125,145 @@
 - 当前使用 Room（本地 SQLite）作为主要数据源，利于离线开发与快速迭代。
 - 如需接入在线接口，只需在 Repository 或 DAO 抽象位置替换实现；得益于分层接口设计，UI 与 ViewModel 可保持不变。
 
-## Mermaid 类图（领域模型）
+## 后端设计图（数据库结构 ER 图）
 ```mermaid
-classDiagram
-    direction LR
-    class User {
-        +long user_id
-        +String username
-        +String password
-        +String avatar_path
-        +long register_time
+erDiagram
+    USER {
+        long user_id PK
+        string username
+        string password
+        string avatar_path
+        long register_time
     }
-    class Post {
-        +long post_id
-        +long author_id
-        +String title
-        +String content
-        +String image_path
-        +long publish_time
+    POST {
+        long post_id PK
+        long author_id FK
+        string title
+        string content
+        string image_path
+        long publish_time
     }
-    class Comment {
-        +long comment_id
-        +long post_id
-        +long author_id
-        +String content
-        +long comment_time
-        +Long parent_comment_id
-        +String reply_to_username
+    COMMENT {
+        long comment_id PK
+        long post_id FK
+        long author_id FK
+        string content
+        long comment_time
+        long parent_comment_id
+        string reply_to_username
     }
-    class Like {
-        +long id
-        +long user_id
-        +int target_type
-        +long target_id
-        +long create_time
+    LIKE {
+        long id PK
+        long user_id FK
+        int target_type
+        long target_id
+        long create_time
     }
-    class Follow {
-        +long id
-        +long follower_id
-        +long followee_id
-        +long create_time
+    FOLLOW {
+        long id PK
+        long follower_id FK
+        long followee_id FK
+        long create_time
     }
-    class Notification {
-        +long id
-        +int type
-        +long target_user_id
-        +long source_user_id
-        +long related_id
-        +long extra_id
-        +String content_preview
-        +boolean is_read
-        +long created_at
+    NOTIFICATION {
+        long id PK
+        int type
+        long target_user_id FK
+        long source_user_id FK
+        long related_id
+        long extra_id
+        string content_preview
+        boolean is_read
+        long created_at
     }
 
-    User <.. Post : author_id
-    User <.. Comment : author_id
-    Post <.. Comment : post_id
-    Comment <.. Comment : parent_comment_id
-    User <.. Like : user_id
-    Post <.. Like : target_id (type=0)
-    Comment <.. Like : target_id (type=1)
-    User <.. Follow : follower_id
-    User <.. Follow : followee_id
-    User <.. Notification : target_user_id
-    User <.. Notification : source_user_id
-    Post <.. Notification : related_id
-    Comment <.. Notification : extra_id
+    USER ||--o{ POST : authors
+    POST ||--o{ COMMENT : has
+    USER ||--o{ COMMENT : writes
+    COMMENT ||--o{ COMMENT : replies
+    USER ||--o{ LIKE : makes
+    POST ||--o{ LIKE : likedBy (type=0)
+    COMMENT ||--o{ LIKE : likedBy (type=1)
+    USER ||--o{ FOLLOW : follows
+    USER ||--o{ FOLLOW : followedBy
+    USER ||--o{ NOTIFICATION : target
+    USER ||--o{ NOTIFICATION : source
+    POST ||--o{ NOTIFICATION : relates
+    COMMENT ||--o{ NOTIFICATION : extra
 ```
 
-## Mermaid 类图（MVVM 分层视图）
+## 前端设计图（页面关系与导航）
 ```mermaid
-classDiagram
-    direction LR
-    class HomeFragment
-    class DetailActivity
-    class PublishActivity
-    class UserProfileActivity
-    class SearchActivity
-    class NotificationActivity
-    class ProfileFragment
-    class SettingsActivity
-    class AuthActivity
+graph LR
+    Main[MainActivity]
+    Home[HomeFragment]
+    Detail[DetailActivity]
+    Publish[PublishActivity]
+    Search[SearchActivity]
+    Notify[NotificationActivity]
+    Profile[ProfileFragment]
+    UProfile[UserProfileActivity]
+    Settings[SettingsActivity]
+    Auth[AuthActivity]
+    FollowList[FollowListActivity]
 
-    class PostsAdapter
-    class CommentsAdapter
-    class NotificationAdapter
+    Main --> Home
+    Home -- 点击卡片 --> Detail
+    Home -- 点击加号 --> Publish
+    Home -- 搜索框 --> Search
+    Home -- 通知入口 --> Notify
+    Main -- 我的入口 --> Profile
 
-    class HomeViewModel
-    class DetailViewModel
-    class PublishViewModel
-    class UserProfileViewModel
-    class SearchViewModel
-    class NotificationViewModel
-    class ProfileViewModel
-    class AuthViewModel
+    Detail -- 点击头像/昵称 --> UProfile
+    Notify -- 关注通知 --> UProfile
+    Notify -- 回复/点赞/提及 --> Detail
 
-    class PostDao
-    class CommentDao
-    class LikeDao
-    class FollowDao
-    class NotificationDao
-    class FollowRepository
-    class AppDatabase
-    class ThemeUtils
+    Profile -- 关注/粉丝列表 --> FollowList
+    Profile -- 设置 --> Settings
+    Settings -- 登录/退出 --> Auth
 
-    HomeFragment --> HomeViewModel
-    DetailActivity --> DetailViewModel
-    PublishActivity --> PublishViewModel
-    UserProfileActivity --> UserProfileViewModel
-    SearchActivity --> SearchViewModel
-    NotificationActivity --> NotificationViewModel
-    ProfileFragment --> ProfileViewModel
-    AuthActivity --> AuthViewModel
-    SettingsActivity --> ThemeUtils
-
-    HomeFragment --> PostsAdapter
-    DetailActivity --> CommentsAdapter
-    NotificationActivity --> NotificationAdapter
-
-    HomeViewModel --> PostDao
-    DetailViewModel --> PostDao
-    DetailViewModel --> CommentDao
-    DetailViewModel --> LikeDao
-    UserProfileViewModel --> PostDao
-    UserProfileViewModel --> FollowRepository
-    SearchViewModel --> PostDao
-    NotificationViewModel --> NotificationDao
-    ProfileViewModel --> PostDao
-
-    FollowRepository --> FollowDao
-    FollowRepository --> NotificationDao
-
-    AppDatabase o--> PostDao
-    AppDatabase o--> CommentDao
-    AppDatabase o--> LikeDao
-    AppDatabase o--> FollowDao
-    AppDatabase o--> NotificationDao
+    Publish -- 发布成功返回 --> Home
 ```
 
-## Mermaid 类图（数据投影模型）
+## 前后端交互图（关键流程 Sequence）
 ```mermaid
-classDiagram
-    direction LR
-    class PostCardItem {
-        +Post post
-        +User user
-        +int likeCount
-        +int commentCount
-    }
-    class PostWithUser {
-        +Post post
-        +User user
-    }
-    class CommentWithUser {
-        +Comment comment
-        +User user
-    }
-    class NotificationWithUser {
-        +Notification notification
-        +User sourceUser
-    }
-    class CommentLikeCount {
-        +long target_id
-        +int count
-    }
+sequenceDiagram
+    autonumber
+    participant UI as HomeFragment
+    participant VM as HomeViewModel
+    participant DAO as PostDao
+    participant DB as Room
 
-    PostCardItem --> Post
-    PostCardItem --> User
-    PostWithUser --> Post
-    PostWithUser --> User
-    CommentWithUser --> Comment
-    CommentWithUser --> User
-    NotificationWithUser --> Notification
-    NotificationWithUser --> User
+    Note over UI,VM: 列表加载更多
+    UI->>VM: 滚动触底触发加载更多
+    VM->>DAO: queryPosts(offset, limit, sort)
+    DAO->>DB: SQL 查询（聚合点赞/评论）
+    DB-->>DAO: 结果集
+    DAO-->>VM: PostCardItems
+    VM-->>UI: 更新列表与 Footer 状态
+
+    Note over UI,VM: 发布帖子（含 @ 提及）
+    participant PDAO as PostDao
+    participant NDAO as NotificationDao
+    UI->>VM: 点击发布
+    VM->>PDAO: insertPost(post)
+    VM->>NDAO: insertMentionNotifications(post)
+    VM-->>UI: 返回首页并刷新
+
+    Note over UI,VM: 点赞评论
+    participant LDAO as LikeDao
+    UI->>VM: 点赞/取消点赞
+    VM->>LDAO: insertLike/deleteLike
+    VM-->>UI: 更新点赞状态与计数
+
+    Note over UI,VM: 关注用户
+    participant FRepo as FollowRepository
+    participant FDAO as FollowDao
+    UI->>VM: 点击关注/取关
+    VM->>FRepo: toggleFollow(follower, followee)
+    FRepo->>FDAO: insert/delete
+    FRepo->>NDAO: insertFollowNotification()
+    VM-->>UI: 更新关注按钮状态
 ```
 
 ## 项目文件结构目录表
